@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +15,10 @@
  * limitations under the License.
  */
 
-require('./button-group.css');
-
-import * as React from 'react';
-import { Fn } from '../../../common/utils/general/general';
-import { classNames } from '../../utils/dom/dom';
+import * as React from "react";
+import { Fn } from "../../../common/utils/general/general";
+import { classNames } from "../../utils/dom/dom";
+import "./button-group.scss";
 
 export interface GroupMember {
   title: string;
@@ -28,7 +28,7 @@ export interface GroupMember {
   isSelected?: boolean;
 }
 
-export interface ButtonGroupProps extends React.Props<any> {
+export interface ButtonGroupProps {
   groupMembers: GroupMember[];
   title?: string;
   className?: string;
@@ -39,14 +39,11 @@ export interface ButtonGroupState {
 
 export class ButtonGroup extends React.Component<ButtonGroupProps, ButtonGroupState> {
 
-  constructor() {
-    super();
-  }
-
   renderMembers() {
     const { groupMembers } = this.props;
-    return groupMembers.map((button) => {
-      return <li className={classNames('group-member', button.className, {'selected' : button.isSelected})}
+    return groupMembers.map(button => {
+      return <li
+        className={classNames("group-member", button.className, { selected: button.isSelected })}
         key={button.key}
         onClick={button.onClick}
       >
@@ -58,7 +55,7 @@ export class ButtonGroup extends React.Component<ButtonGroupProps, ButtonGroupSt
   render() {
     const { title, className } = this.props;
 
-    return <div className={classNames('button-group', className)}>
+    return <div className={classNames("button-group", className)}>
       {title ? <div className="button-group-title">{title}</div> : null}
       <ul className="group-container">{this.renderMembers()}</ul>
     </div>;

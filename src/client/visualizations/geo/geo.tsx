@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +15,17 @@
  * limitations under the License.
  */
 
-require('./geo.css');
-
-import * as React from 'react';
-import { VisualizationProps } from '../../../common/models/index';
-import { GEO_MANIFEST } from '../../../common/manifests/geo/geo';
-
-import { BaseVisualization, BaseVisualizationState } from '../base-visualization/base-visualization';
-
+import * as React from "react";
+import { GEO_MANIFEST } from "../../../common/manifests/geo/geo";
+import { VisualizationProps } from "../../../common/models/index";
+import { BaseVisualization, BaseVisualizationState } from "../base-visualization/base-visualization";
+import "./geo.scss";
 
 export interface GeoState extends BaseVisualizationState {
 }
 
 export class Geo extends BaseVisualization<GeoState> {
   public static id = GEO_MANIFEST.name;
-
-  constructor() {
-    super();
-  }
 
   getDefaultState(): GeoState {
     return super.getDefaultState() as GeoState;

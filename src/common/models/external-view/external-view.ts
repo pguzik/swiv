@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +15,11 @@
  * limitations under the License.
  */
 
-import { Class, Instance, isInstanceOf } from 'immutable-class';
-import { Timezone } from 'chronoshift';
-import { $, Expression } from 'swiv-plywood';
-import { Essence, DataCube, Filter, Splits, Customization} from '../../../common/models/index';
+import { Timezone } from "chronoshift";
+import { Class, Instance } from "immutable-class";
+import { DataCube, Filter, Splits } from "../../../common/models/index";
 
-export interface LinkGenerator {
-  (dataCube: DataCube, timezone: Timezone, filter: Filter, splits: Splits): string;
-}
+export type LinkGenerator = (dataCube: DataCube, timezone: Timezone, filter: Filter, splits: Splits) => string;
 
 export interface ExternalViewValue {
   title: string;
@@ -31,10 +29,11 @@ export interface ExternalViewValue {
 }
 
 var check: Class<ExternalViewValue, ExternalViewValue>;
+
 export class ExternalView implements Instance<ExternalViewValue, ExternalViewValue> {
 
   static isExternalView(candidate: any): candidate is ExternalView {
-    return isInstanceOf(candidate, ExternalView);
+    return candidate instanceof ExternalView;
   }
 
   static fromJS(parameters: ExternalViewValue): ExternalView {
@@ -55,14 +54,14 @@ export class ExternalView implements Instance<ExternalViewValue, ExternalViewVal
   constructor(parameters: ExternalViewValue) {
     const { title, linkGenerator } = parameters;
     if (!title) throw new Error("External view must have title");
-    if (typeof linkGenerator !== 'string') throw new Error("Must provide link generator function");
+    if (typeof linkGenerator !== "string") throw new Error("Must provide link generator function");
 
     this.title = title;
     this.linkGenerator = linkGenerator;
     var linkGeneratorFnRaw: any = null;
     try {
       // dataSource is for back compat.
-      linkGeneratorFnRaw = new Function('dataCube', 'dataSource', 'timezone', 'filter', 'splits', linkGenerator) as LinkGenerator;
+      linkGeneratorFnRaw = new Function("dataCube", "dataSource", "timezone", "filter", "splits", linkGenerator) as LinkGenerator;
     } catch (e) {
       throw new Error(`Error constructing link generator function: ${e.message}`);
     }
@@ -112,4 +111,5 @@ export class ExternalView implements Instance<ExternalViewValue, ExternalViewVal
     return `${this.title}: ${this.linkGenerator}`;
   }
 }
+
 check = ExternalView;

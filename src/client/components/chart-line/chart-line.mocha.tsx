@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,57 +15,56 @@
  * limitations under the License.
  */
 
-import { expect } from 'chai';
-import * as sinon from 'sinon';
-import * as React from 'react';
-import * as ReactDOM from 'react-dom';
+import { expect } from "chai";
+import { Dataset, TimeRange } from "plywood";
+import * as React from "react";
+import * as ReactDOM from "react-dom";
+import { StageFixtures } from "../../../common/models/fixtures";
+import { renderIntoDocument } from "../../utils/test-utils";
+import { ChartLine } from "./chart-line";
 
-import '../../utils/test-utils/index';
+class Wrap extends React.Component<{dataset: Dataset}> {
+  render() {
+    return <ChartLine
+        dataset={this.props.dataset}
+        getX={d => d["TIME"] as TimeRange}
+        getY={d => d["numberOfKoalas"]}
+        scaleX={d => d["index"]}
+        scaleY={d => 2}
+        stage={StageFixtures.defaultA()}
+        color={"yes"}
+        showArea={null}
+      />;
+  }
+}
 
-import * as TestUtils from 'react-addons-test-utils';
-
-import { Dataset, TimeRange } from 'swiv-plywood';
-import { ChartLine } from './chart-line';
-
-import { StageMock } from '../../../common/models/mocks';
-
-describe('ChartLine', () => {
-  it('adds the correct class', () => {
+describe("ChartLine", () => {
+  it("adds the correct class", () => {
     var dataset = Dataset.fromJS([
       {
         TIME: {
-          type: 'TIME_RANGE',
-          start: new Date('2015-01-26T00:00:00Z'),
-          end: new Date('2015-01-26T01:00:00Z')
+          type: "TIME_RANGE",
+          start: new Date("2015-01-26T00:00:00Z"),
+          end: new Date("2015-01-26T01:00:00Z")
         },
         numberOfKoalas: 10,
         index: 0 // to return a simple x for testing purposes
       },
       {
         TIME: {
-          type: 'TIME_RANGE',
-          start: new Date('2015-01-26T01:00:00Z'),
-          end: new Date('2015-01-26T02:00:00Z')
+          type: "TIME_RANGE",
+          start: new Date("2015-01-26T01:00:00Z"),
+          end: new Date("2015-01-26T02:00:00Z")
         },
         numberOfKoalas: 12,
         index: 1 // to return a simple x for testing purposes
       }
     ]);
 
-    var renderedComponent = TestUtils.renderIntoDocument(
-      <ChartLine
-        dataset={dataset}
-        getX={d => d['TIME'] as TimeRange}
-        getY={d => d['numberOfKoalas']}
-        scaleX={d => d['index']}
-        scaleY={d => 2}
-        stage={StageMock.defaultA()}
-        color={'yes'}
-        showArea={null}
-      />
+    var renderedComponent = renderIntoDocument(
+      <Wrap dataset={dataset}/>
     );
 
-    expect(TestUtils.isCompositeComponent(renderedComponent), 'should be composite').to.equal(true);
-    expect((ReactDOM.findDOMNode(renderedComponent) as any).className, 'should contain class').to.contain('chart-line');
+    expect(ReactDOM.findDOMNode(renderedComponent).className, "should contain class").to.contain("chart-line");
   });
 });

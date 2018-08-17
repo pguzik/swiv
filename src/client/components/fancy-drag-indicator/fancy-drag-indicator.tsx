@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +15,13 @@
  * limitations under the License.
  */
 
-require('./fancy-drag-indicator.css');
+import * as React from "react";
+import { DragPosition } from "../../../common/models/index";
+import { CORE_ITEM_GAP, CORE_ITEM_WIDTH } from "../../config/constants";
+import { SvgIcon } from "../svg-icon/svg-icon";
+import "./fancy-drag-indicator.scss";
 
-import * as React from 'react';
-import { SvgIcon } from '../svg-icon/svg-icon';
-import { CORE_ITEM_WIDTH, CORE_ITEM_GAP } from '../../config/constants';
-import { DragPosition } from '../../../common/models/index';
-
-export interface FancyDragIndicatorProps extends React.Props<any> {
+export interface FancyDragIndicatorProps {
   dragPosition: DragPosition;
 }
 
@@ -29,11 +29,6 @@ export interface FancyDragIndicatorState {
 }
 
 export class FancyDragIndicator extends React.Component<FancyDragIndicatorProps, FancyDragIndicatorState> {
-
-  constructor() {
-    super();
-
-  }
 
   render() {
     const { dragPosition } = this.props;
@@ -48,12 +43,12 @@ export class FancyDragIndicator extends React.Component<FancyDragIndicatorProps,
     } else {
       ghostArrowLeft = dragPosition.replace * sectionWidth + CORE_ITEM_WIDTH / 2;
       let left = dragPosition.replace * sectionWidth;
-      dragGhostElement = <div className="drag-ghost-element" style={{left: left}}></div>;
+      dragGhostElement = <div className="drag-ghost-element" style={{ left }}></div>;
     }
 
     return <div className="fancy-drag-indicator">
       {dragGhostElement}
-      <SvgIcon className="drag-ghost-arrow" svg={require('../../icons/drag-arrow.svg')} style={{left: ghostArrowLeft}}/>
+      <SvgIcon className="drag-ghost-arrow" svg={require("../../icons/drag-arrow.svg")} style={{ left: ghostArrowLeft }} />
     </div>;
   }
 }

@@ -1,163 +1,137 @@
-# Swiv
+# Turnilo
 
-Swiv is a web-based exploratory visualization UI for [Druid](https://github.com/druid-io/druid) built on top of 
-[Plywood](https://github.com/implydata/plywood). 
+[![npm version](https://img.shields.io/npm/v/turnilo.svg)](https://www.npmjs.org/package/turnilo)
+[![build status](https://travis-ci.org/allegro/turnilo.svg?branch=master)](https://travis-ci.org/allegro/turnilo)
 
-Swiv is best used with [Druid](http://druid.io).
-Internal and external APIs may change with little notice.
+Turnilo is a business intelligence, data exploration and visualization web application for [Druid](http://druid.io/).
+Turnilo is a fork of [Pivot](https://github.com/implydata/pivot) which is currently available under commercial licence only.
+This repository was forked from the stalled repository [Swiv](https://github.com/yahoo/swiv) 
+with the latest version of Pivot under Apache license.
 
-## Fork info
+## Motivation
 
-This is a fork of: https://github.com/yahoo/swiv 
+[Druid](https://github.com/druid-io/druid) is heavily used as business intelligence platform at [Allegro](https://allegro.tech/).
+In order to gain wide adoption of non-technical users, Druid requires simple yet powerful user interface.
+In Allegro we have decided that we are going to continue Pivot development as an open source software,
+this is how Turnilo emerged.
 
-## Contribution
+## Manifesto
 
-This is a community owned and operated project.  Contributions are welcome and all interaction is done via this git repository.  File issues, make pull requests and review them all here please.
+* High usability for non-technical users over sophisticated but rarely used features.
+* Focus on interactive data exploration over static predefined dashboards.
+* Outstanding integration with Druid over support for other data sources like SQL databases.
+* Focus on data visualizations over Druid cluster or data ingestion management.
+* Data cubes configuration as a code over UI editor backed by non-versioned database.
+* Stateless over stateful server-side architecture.
+* Support for most recent versions of standards compliant browsers.
 
 ## Features
 
-**Drag-and-drop UI**
+* Intuitive, drag and drop, gorgeous user interface to visualize Druid datasets
+* Fully dedicated to low latency Druid 
+[Timeseries](http://druid.io/docs/latest/querying/timeseriesquery.html), 
+[TopN](http://druid.io/docs/latest/querying/topnquery.html) and 
+[GroupBy](http://druid.io/docs/latest/querying/groupbyquery.html) queries.
+* Unified view for historical and real-time data
+* Blazingly fast
 
-![Drag to Split](https://github.com/yahoo/swiv/raw/master/docs/images/drag-and-drop.gif)
+![Turnilo UI](https://github.com/allegro/turnilo/raw/master/docs/images/drag-and-drop.gif)
 
-**Contextual exploration**
+## Pre-requisites
 
-![Time Highlight](https://github.com/yahoo/swiv/raw/master/docs/images/explore.gif)
+* [Node.js](https://nodejs.org/) - LTS version.
 
-**Comparisons**
-
-![Time Highlight](https://github.com/yahoo/swiv/raw/master/docs/images/compare.gif)
+:warning:
+Do not use `yarn` command for dependency managment and project build, use `npm` instead.
+With `npm` builds are reproducible (thanks to package-lock.json) and even faster than with `yarn`.
 
 ## Usage
 
-### Ensure that you have an up-to-date node
-
-Make sure you have node (>= 4.x.x) installed. On MacOS with [homebrew](http://brew.sh/) you can do:
+Install Turnilo distribution using [npm](https://www.npmjs.com/).
 
 ```
-brew update
-brew install node
+npm install -g turnilo
 ```
 
-### Install
-
-Next simply run:
-
-```
-npm i -g yahoo-swiv
-```
-
-**That's it.** You are ready to Swiv.
-
-
-### Example
-
-Start off by running an example (static) dataset:
+Start off by running an example with Wikipedia page editions dataset 
+and open [http://localhost:9090/](http://localhost:9090/).
 
 ```
-swiv --examples
+turnilo --examples
 ```
 
-### Run with Druid
-
-Next connect Swiv to your broker by simply pointing it to your broker host
-
-```
-swiv --druid your.druid.broker.host:8082
-```
-
-Swiv will automatically introspect your Druid cluster and figure out your dimensions and measures.
-
-**Note:** if Swiv starts up and gives you a query error it is most likely because it could not properly introspect your schema.
-You probably have some *hyperUnique* column that Swiv is trying to SUM over.
-You will have to provide Swiv with a config file as in the nest section.   
-
-### Create a config
-
-In general Swiv will never know your schema as well as you.
-To get a better experience you should create a [config](https://github.com/yahoo/swiv/blob/master/docs/configuration.md) and provide it to Swiv.
-The fastest way to create a config is to have Swiv do it for you.
+Or connect to the existing Druid cluster using `--druid` command line option.
+Turnilo will automatically introspect your Druid cluster and figure out available datasets.
 
 ```
-swiv --druid your.druid.broker.host:8082 --print-config --with-comments > config.yaml
+turnilo --druid broker_host:broker_port
 ```
 
-The `--print-config` option will make Swiv run through its regular introspection and then, instead of tarting a server, dump the YAML onto the stdout and exit.  
+## Documentation
 
-```
-swiv --config config.yaml
-```
-
-Now open the config in your favorite editor and adjust to taste.
-Make sure to read through the [documentation](https://github.com/yahoo/swiv/blob/master/docs/configuration.md) about the possible configuration options.
+* [Configuration](docs/configuration.md)
+* [Generating Links](docs/generating-links.md)
+* [Health checking](docs/health-checking.md)
 
 ## Development
 
-Here are the steps to clone Swiv and run it as a developer. 
-
-Firstly make sure you have the latest node (>= 5.5.x) and gulp installed:
-
-```
-npm i -g gulp
-```
-
-Clone the project
-
-```
-git clone git@github.com:yahoo/swiv.git
-cd swiv
-```
-
-Inside the swiv folder run:
+Install project dependencies.
 
 ```
 npm install
-gulp
 ```
 
-Finally you have to create a `config.yaml` file. (or use the sample)
+Build the project.
 
 ```
-./bin/swiv --druid your.druid.broker.host:8082 --print-config --with-comments > config.yaml
+npm run build:dev
 ```
 
-The `--with-comments` flag adds docs about what goes into the config.
-
-Then you are ready to
+Run Wikipedia examples.
 
 ```
-./bin/swiv --config config.yaml
+npm run start:dev -- --examples
 ```
 
-We use [WebStorm 2016.1](https://www.jetbrains.com/webstorm/) to develop Swiv and the checked in `.idea` directory contains
-all of the auto formatting and code styles. You are free to use any editor as all the build scripts are editor agnostic.
+Connect to the existing Druid cluster.
 
-Running `gulp watch` will build the project and start all the automated watchers.
+```
+npm run start:dev -- --druid broker_host:broker_port
+```
 
-## Roadmap
+### Testing
 
-**Recent improvements:**
+Run all unit tests.
 
-- Exclusion filters
-- Full support of Druid 0.9.1
-- Swiv can connect to multiple clusters, also Postgres and MySQL
-- Continuous dimension filtering and splitting
-- Support for Druid Theta sketches (for countDistinct())
-- Horizontal bars in Table
-- Side panel resizing
-- Ability to define custom granularities for bucketing
-- Timezone support
+```
+npm run test
+```
 
-For a full list of changes see our [CHANGELOG](CHANGELOG.md)
+Or run tests separately for common, client and server modules.
 
-**We will be working on:**
+```
+npm run test:common
+npm run test:client
+npm run test:server
+```
 
-- Additional visualizations (geo, heatmap)
-- String / RegExp filters
-- Removing strict limits on queries
-- Bookmarks and dashboarding features
-- Various additions, improvements and fixes to make the app more complete
+## Debugging 
 
-## Questions & Support
+### Client module
 
-Please file bugs and feature requests by opening an issue on GitHub, also questions can be asked via GitHub issues.
+In WebStorm\IntelliJ open "Run/Debug Configurations", click "Add New Configuration".
+Next choose "JavaScript Debug" and set URL property to "localhost:9090".
+
+You can find more information [here](https://www.jetbrains.com/help/webstorm/debugging-typescript.html)
+
+### Server module
+
+In WebStorm\IntelliJ open "Run/Debug Configurations", click "Add New Configuration".
+Next choose "Node.JS", set "JavaScript file" to "./bin/turnilo" 
+and "Application parameters" to "--examples".
+
+You can find more infrmation [here](https://www.jetbrains.com/help/webstorm/running-and-debugging-node-js.html)
+ 
+## License
+
+**Turnilo** is published under [Apache License 2.0](http://www.apache.org/licenses/LICENSE-2.0).

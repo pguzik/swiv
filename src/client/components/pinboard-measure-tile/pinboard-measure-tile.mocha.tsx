@@ -1,5 +1,7 @@
 /*
+/*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,28 +16,22 @@
  * limitations under the License.
  */
 
-import { expect } from 'chai';
-import * as sinon from 'sinon';
-import * as React from 'react';
-import * as ReactDOM from 'react-dom';
+import { expect } from "chai";
+import * as React from "react";
+import * as ReactDOM from "react-dom";
+import * as TestUtils from "react-dom/test-utils";
+import { EssenceFixtures } from "../../../common/models/fixtures";
+import { SortOn } from "../../../common/models/index";
+import { renderIntoDocument } from "../../utils/test-utils";
+import { PinboardMeasureTile } from "./pinboard-measure-tile";
 
-import '../../utils/test-utils/index';
+describe("PinboardMeasureTile", () => {
+  it("adds the correct class", () => {
 
-import * as TestUtils from 'react-addons-test-utils';
+    var essence = EssenceFixtures.wikiTotals();
+    var sortOn = new SortOn({ dimension: essence.dataCube.getDimension("articleName") });
 
-import { SortOn } from '../../../common/models/index';
-import { EssenceMock } from '../../../common/models/mocks';
-
-import { $, Expression } from 'swiv-plywood';
-import { PinboardMeasureTile } from './pinboard-measure-tile';
-
-describe('PinboardMeasureTile', () => {
-  it('adds the correct class', () => {
-
-    var essence = EssenceMock.wikiTotals();
-    var sortOn = new SortOn({dimension: essence.dataCube.getDimension('articleName')});
-
-    var renderedComponent = TestUtils.renderIntoDocument(
+    var renderedComponent = renderIntoDocument(
       <PinboardMeasureTile
         essence={essence}
         title="Pinboard"
@@ -44,8 +40,8 @@ describe('PinboardMeasureTile', () => {
       />
     );
 
-    expect(TestUtils.isCompositeComponent(renderedComponent), 'should be composite').to.equal(true);
-    expect((ReactDOM.findDOMNode(renderedComponent) as any).className, 'should contain class').to.contain('pinboard-measure-tile');
+    expect(TestUtils.isCompositeComponent(renderedComponent), "should be composite").to.equal(true);
+    expect(ReactDOM.findDOMNode(renderedComponent).className, "should contain class").to.contain("pinboard-measure-tile");
   });
 
 });

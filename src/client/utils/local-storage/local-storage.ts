@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,5 +26,6 @@ export function get(key: string): any {
 export function set(key: string, value: any) {
   try {
     localStorage[key] = JSON.stringify(value);
-  } catch (e) {}
+  } catch (e) {
+  }
 }

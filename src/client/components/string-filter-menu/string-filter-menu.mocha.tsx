@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,37 +15,35 @@
  * limitations under the License.
  */
 
-import { expect } from 'chai';
-import * as React from 'react';
-import * as ReactDOM from 'react-dom';
-import * as TestUtils from 'react-addons-test-utils';
+import { expect } from "chai";
+import * as React from "react";
+import * as ReactDOM from "react-dom";
+import * as TestUtils from "react-dom/test-utils";
+import { DimensionFixtures, EssenceFixtures, StageFixtures, TimekeeperFixtures } from "../../../common/models/fixtures";
+import { renderIntoDocument } from "../../utils/test-utils";
+import { StringFilterMenu } from "./string-filter-menu";
 
-import '../../utils/test-utils/index';
-
-import { EssenceMock, TimekeeperMock, DimensionMock, StageMock } from '../../../common/models/mocks';
-import { StringFilterMenu } from './string-filter-menu';
-
-describe.skip('StringFilterMenu', () => {
-  it('adds the correct class', () => {
-    var div = document.createElement('div');
+describe.skip("StringFilterMenu", () => {
+  it("adds the correct class", () => {
+    var div = document.createElement("div");
     div.setAttribute("id", "Div1");
 
-    var renderedComponent = TestUtils.renderIntoDocument(
+    var renderedComponent = renderIntoDocument(
       <StringFilterMenu
         clicker={null}
-        dimension={DimensionMock.countryURL()}
-        essence={EssenceMock.wikiLineChart()}
-        timekeeper={TimekeeperMock.fixed()}
+        dimension={DimensionFixtures.countryURL()}
+        essence={EssenceFixtures.wikiLineChart()}
+        timekeeper={TimekeeperFixtures.fixed()}
         onClose={null}
-        containerStage={StageMock.defaultA()}
+        containerStage={StageFixtures.defaultA()}
         openOn={div}
         inside={div}
         changePosition={null}
       />
     );
 
-    expect(TestUtils.isCompositeComponent(renderedComponent), 'should be composite').to.equal(true);
-    expect((ReactDOM.findDOMNode(renderedComponent) as any).className, 'should contain class').to.contain('string-filter-menu');
+    expect(TestUtils.isCompositeComponent(renderedComponent), "should be composite").to.equal(true);
+    expect(ReactDOM.findDOMNode(renderedComponent).className, "should contain class").to.contain("string-filter-menu");
   });
 
 });

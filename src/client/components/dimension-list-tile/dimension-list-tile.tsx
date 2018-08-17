@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,70 +15,87 @@
  * limitations under the License.
  */
 
-require('./dimension-list-tile.css');
+import * as React from "react";
+import { Component, CSSProperties, DragEvent, MouseEvent } from "react";
+import { Clicker, DataCube, Dimension, Essence, Filter, Splits, Stage } from "../../../common/models/index";
+import { Fn } from "../../../common/utils/general/general";
+import { MAX_SEARCH_LENGTH, STRINGS } from "../../config/constants";
+import { findParentWithClass, setDragGhost } from "../../utils/dom/dom";
+import { DragManager } from "../../utils/drag-manager/drag-manager";
+import { DimensionActionsMenu } from "../dimension-actions-menu/dimension-actions-menu";
+import { SearchableTile } from "../searchable-tile/searchable-tile";
+import { TileHeaderIcon } from "../tile-header/tile-header";
+import { DIMENSION_CLASS_NAME } from "./dimension-item";
+import "./dimension-list-tile.scss";
+import { DimensionOrGroupForView, DimensionsConverter } from "./dimensions-converter";
+import { DimensionsRenderer } from "./dimensions-renderer";
 
-import * as React from 'react';
-import { Fn } from '../../../common/utils/general/general';
-import { STRINGS, DIMENSION_HEIGHT, MAX_SEARCH_LENGTH } from '../../config/constants';
-import { DragManager } from '../../utils/drag-manager/drag-manager';
-import { findParentWithClass, setDragGhost, transformStyle, classNames } from '../../utils/dom/dom';
-import { Stage, Clicker, Essence, VisStrategy, Dimension, SplitCombine } from '../../../common/models/index';
-import { SvgIcon } from '../svg-icon/svg-icon';
-import { DimensionActionsMenu } from '../dimension-actions-menu/dimension-actions-menu';
-import { TileHeaderIcon } from '../tile-header/tile-header';
-import { HighlightString } from '../highlight-string/highlight-string';
-import { SearchableTile } from '../searchable-tile/searchable-tile';
-
-const DIMENSION_CLASS_NAME = 'dimension';
-
-export interface DimensionListTileProps extends React.Props<any> {
+export interface DimensionListTileProps {
   clicker: Clicker;
   essence: Essence;
   menuStage: Stage;
   triggerFilterMenu: Fn;
   triggerSplitMenu: Fn;
-  getUrlPrefix?: () => string;
-  style?: React.CSSProperties;
+  style?: CSSProperties;
 }
 
 export interface DimensionListTileState {
-  DimensionActionsMenuAsync?: typeof DimensionActionsMenu;
   menuOpenOn?: Element;
   menuDimension?: Dimension;
-  highlightDimension?: Dimension;
   showSearch?: boolean;
   searchText?: string;
 }
 
-export class DimensionListTile extends React.Component<DimensionListTileProps, DimensionListTileState> {
+const hasSearchTextPredicate = (searchText: string) => (dimension: Dimension): boolean => {
+  return dimension.title.toLowerCase().includes(searchText.toLowerCase());
+};
 
-  constructor() {
-    super();
+const isFilteredOrSplitPredicate = (essence: Essence) => (dimension: Dimension): boolean => {
+  const { dataCube, filter, splits } = essence;
+  return isFiltered(dimension, filter, dataCube) || isSplit(dimension, splits, dataCube);
+};
+
+const isSplit = (dimension: Dimension, splits: Splits, dataCube: DataCube): boolean => {
+  return splits
+    .splitCombines
+    .map(split => dataCube.dimensions.getDimensionByExpression(split.expression))
+    .contains(dimension);
+};
+
+const isFiltered = (dimension: Dimension, filter: Filter, dataCube: DataCube): boolean => {
+  return filter
+    .clauses
+    .map(clause => dataCube.dimensions.getDimensionByExpression(clause.expression))
+    .contains(dimension);
+};
+
+const isSelectedDimensionPredicate = (menuDimension: Dimension) => (dimension: Dimension): boolean => {
+  return menuDimension === dimension;
+};
+
+export class DimensionListTile extends Component<DimensionListTileProps, DimensionListTileState> {
+
+  constructor(props: DimensionListTileProps) {
+    super(props);
     this.state = {
-      DimensionActionsMenuAsync: null,
       menuOpenOn: null,
       menuDimension: null,
-      highlightDimension: null,
       showSearch: false,
-      searchText: ''
+      searchText: ""
     };
   }
 
-  componentDidMount() {
-    require.ensure(['../dimension-actions-menu/dimension-actions-menu'], (require) => {
-      this.setState({
-        DimensionActionsMenuAsync: require('../dimension-actions-menu/dimension-actions-menu').DimensionActionsMenu
-      });
-    }, 'dimension-actions-menu');
-  }
-
-  clickDimension(dimension: Dimension, e: MouseEvent) {
-    var { menuOpenOn } = this.state;
-    var target = findParentWithClass(e.target as Element, DIMENSION_CLASS_NAME);
+  clickDimension = (dimensionName: string, e: MouseEvent<HTMLElement>) => {
+    const { menuOpenOn } = this.state;
+    const target = findParentWithClass(e.target as Element, DIMENSION_CLASS_NAME);
     if (menuOpenOn === target) {
       this.closeMenu();
       return;
     }
+
+    const { essence: { dataCube } } = this.props;
+    const dimension = dataCube.dimensions.getDimensionByName(dimensionName);
+
     this.setState({
       menuOpenOn: target,
       menuDimension: dimension
@@ -93,44 +111,24 @@ export class DimensionListTile extends React.Component<DimensionListTileProps, D
     });
   }
 
-  dragStart(dimension: Dimension, e: DragEvent) {
-    var { essence, getUrlPrefix } = this.props;
+  dragStart = (dimensionName: string, e: DragEvent<HTMLElement>) => {
+    const { essence: { dataCube } } = this.props;
+    const dimension = dataCube.dimensions.getDimensionByName(dimensionName);
 
-    var dataTransfer = e.dataTransfer;
-    dataTransfer.effectAllowed = 'all';
+    const dataTransfer = e.dataTransfer;
+    dataTransfer.effectAllowed = "all";
+    dataTransfer.setData("text/plain", dimension.title);
 
-    if (getUrlPrefix) {
-      var newUrl = essence.changeSplit(SplitCombine.fromExpression(dimension.expression), VisStrategy.FairGame).getURL(getUrlPrefix());
-      dataTransfer.setData("text/url-list", newUrl);
-      dataTransfer.setData("text/plain", newUrl);
-    }
-
-    DragManager.setDragDimension(dimension, 'dimension-list-tile');
+    DragManager.setDragDimension(dimension, "dimension-list-tile");
     setDragGhost(dataTransfer, dimension.title);
 
     this.closeMenu();
   }
 
-  onMouseOver(dimension: Dimension) {
-    var { highlightDimension } = this.state;
-    if (highlightDimension === dimension) return;
-    this.setState({
-      highlightDimension: dimension
-    });
-  }
-
-  onMouseLeave(dimension: Dimension) {
-    var { highlightDimension } = this.state;
-    if (highlightDimension !== dimension) return;
-    this.setState({
-      highlightDimension: null
-    });
-  }
-
   toggleSearch() {
     var { showSearch } = this.state;
     this.setState({ showSearch: !showSearch });
-    this.onSearchChange('');
+    this.onSearchChange("");
   }
 
   onSearchChange(text: string) {
@@ -146,11 +144,11 @@ export class DimensionListTile extends React.Component<DimensionListTileProps, D
 
   renderMenu(): JSX.Element {
     var { essence, clicker, menuStage, triggerFilterMenu, triggerSplitMenu } = this.props;
-    var { DimensionActionsMenuAsync, menuOpenOn, menuDimension } = this.state;
-    if (!DimensionActionsMenuAsync || !menuDimension) return null;
+    var { menuOpenOn, menuDimension } = this.state;
+    if (!menuDimension) return null;
     var onClose = this.closeMenu.bind(this);
 
-    return <DimensionActionsMenuAsync
+    return <DimensionActionsMenu
       clicker={clicker}
       essence={essence}
       direction="right"
@@ -163,63 +161,39 @@ export class DimensionListTile extends React.Component<DimensionListTileProps, D
     />;
   }
 
+  private renderMessageIfNoDimensionsFound(dimensionsForView: DimensionOrGroupForView[]) {
+    const { searchText } = this.state;
+
+    if (!!searchText && !dimensionsForView.some(dimension => dimension.hasSearchText)) {
+      const noDimensionsFound = `No dimensions for "${searchText}"`;
+      return <div className="message">{noDimensionsFound}</div>;
+    } else {
+      return null;
+    }
+  }
+
   render() {
-    var { essence, style } = this.props;
-    var { menuDimension, highlightDimension, showSearch, searchText } = this.state;
-    var { dataCube } = essence;
-    var shownDimensions = dataCube.dimensions.toArray();
-    var itemY = 0;
+    const { essence, style } = this.props;
+    const { menuDimension, showSearch, searchText } = this.state;
+    const { dataCube } = essence;
 
-    if (searchText) {
-      shownDimensions = shownDimensions.filter((r) => {
-        return r.title.toLowerCase().indexOf(searchText.toLowerCase()) !== -1;
-      });
-    }
+    const dimensionsConverter = new DimensionsConverter(
+      hasSearchTextPredicate(searchText),
+      isFilteredOrSplitPredicate(essence),
+      isSelectedDimensionPredicate(menuDimension)
+    );
+    const dimensionsForView = dataCube.dimensions.accept(dimensionsConverter);
 
-    const dimensionItems = shownDimensions.map((dimension) => {
-      var className = classNames(
-        DIMENSION_CLASS_NAME,
-        'type-' + dimension.className,
-        {
-          highlight: dimension === highlightDimension,
-          selected: dimension === menuDimension
-        }
-      );
-      var style = transformStyle(0, itemY);
-      itemY += DIMENSION_HEIGHT;
-
-      return <div
-        className={className}
-        key={dimension.name}
-        onClick={this.clickDimension.bind(this, dimension)}
-        onMouseOver={this.onMouseOver.bind(this, dimension)}
-        onMouseLeave={this.onMouseLeave.bind(this, dimension)}
-        draggable={true}
-        onDragStart={this.dragStart.bind(this, dimension)}
-        style={style}
-      >
-        <div className="icon">
-          <SvgIcon svg={require('../../icons/dim-' + dimension.className + '.svg')}/>
-        </div>
-        <div className="item-title">
-          <HighlightString className="label" text={dimension.title} highlight={searchText} />
-        </div>
-
-      </div>;
-    }, this);
-
-    var message: JSX.Element = null;
-    if (searchText && !dimensionItems.length) {
-      message = <div className="message">{`No ${ STRINGS.dimensions.toLowerCase() } for "${searchText}"`}</div>;
-    }
+    const dimensionsRenderer = new DimensionsRenderer(this.clickDimension, this.dragStart, searchText);
+    const items = dimensionsRenderer.render(dimensionsForView);
+    const message = this.renderMessageIfNoDimensionsFound(dimensionsForView);
 
     var icons: TileHeaderIcon[] = [
-      //{ name: 'more', onClick: null, svg: require('../../icons/full-more-mini.svg') }
       {
-        name: 'search',
-        ref: 'search',
+        name: "search",
+        ref: "search",
         onClick: this.toggleSearch.bind(this),
-        svg: require('../../icons/full-search.svg'),
+        svg: require("../../icons/full-search.svg"),
         active: showSearch
       }
     ];
@@ -232,14 +206,14 @@ export class DimensionListTile extends React.Component<DimensionListTileProps, D
       searchText={searchText}
       showSearch={showSearch}
       icons={icons}
-      className='dimension-list-tile'
+      className="dimension-list-tile"
     >
-      <div className="items" ref="items">
-        {dimensionItems}
-        { message }
+      <div className="rows" ref="items">
+        {items}
+        {message}
       </div>
 
-      { this.renderMenu() }
+      {this.renderMenu()}
     </SearchableTile>;
 
   }

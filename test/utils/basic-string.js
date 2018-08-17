@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +15,7 @@
  * limitations under the License.
  */
 
-const Expression = require('swiv-plywood').Expression;
+const Expression = require('plywood').Expression;
 
 function basicString(thing) {
   return thing.name + ' ~ ' + thing.formula;

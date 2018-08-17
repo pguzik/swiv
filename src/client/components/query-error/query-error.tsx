@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +15,11 @@
  * limitations under the License.
  */
 
-require('./query-error.css');
+import * as React from "react";
+import { STRINGS } from "../../config/constants";
+import "./query-error.scss";
 
-import * as React from 'react';
-import { STRINGS } from '../../config/constants';
-
-export interface QueryErrorProps extends React.Props<any> {
+export interface QueryErrorProps {
   error: any;
 }
 
@@ -27,10 +27,6 @@ export interface QueryErrorState {
 }
 
 export class QueryError extends React.Component<QueryErrorProps, QueryErrorState> {
-
-  constructor() {
-    super();
-  }
 
   render() {
     var { error } = this.props;

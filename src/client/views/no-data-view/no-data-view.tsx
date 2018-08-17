@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +15,17 @@
  * limitations under the License.
  */
 
-require('./no-data-view.css');
+import * as React from "react";
+import { AppSettings, Customization, User } from "../../../common/models/index";
+import { Fn } from "../../../common/utils/general/general";
+import { SvgIcon } from "../../components/index";
+import { STRINGS } from "../../config/constants";
+import { NoDataHeaderBar } from "./no-data-header-bar/no-data-header-bar";
+import "./no-data-view.scss";
 
-import * as React from 'react';
-import { User, Customization, AppSettings } from '../../../common/models/index';
-import { STRINGS } from '../../config/constants';
-import { Fn } from '../../../common/utils/general/general';
+export type Mode = "no-cluster" | "no-cube";
 
-import { SvgIcon } from '../../components/index';
-
-import { NoDataHeaderBar} from './no-data-header-bar/no-data-header-bar';
-
-export type Mode = 'no-cluster' | 'no-cube';
-
-export interface NoDataViewProps extends React.Props<any> {
+export interface NoDataViewProps {
   user?: User;
   appSettings?: AppSettings;
   onNavClick?: Fn;
@@ -42,11 +40,11 @@ export interface NoDataViewState {
 
 export class NoDataView extends React.Component <NoDataViewProps, NoDataViewState> {
 
-  static NO_CLUSTER: Mode = 'no-cluster';
-  static NO_CUBE: Mode = 'no-cube';
+  static NO_CLUSTER: Mode = "no-cluster";
+  static NO_CUBE: Mode = "no-cube";
 
-  constructor() {
-    super();
+  constructor(props: NoDataViewProps) {
+    super(props);
     this.state = {};
   }
 
@@ -65,22 +63,22 @@ export class NoDataView extends React.Component <NoDataViewProps, NoDataViewStat
   }
 
   goToSettings() {
-    window.location.hash = '#settings';
+    window.location.hash = "#settings";
   }
 
   renderSettingsIcon() {
     const { user, stateful } = this.props;
-    if (!user || !user.allow['settings'] || !stateful) return null;
+    if (!user || !user.allow["settings"] || !stateful) return null;
 
     return <div className="icon-button" onClick={this.goToSettings.bind(this)}>
-      <SvgIcon svg={require('../../icons/full-settings.svg')}/>
+      <SvgIcon svg={require("../../icons/full-settings.svg")} />
     </div>;
   }
 
   renderTitle(mode: Mode): JSX.Element {
     return <div className="title">
       <div className="icon">
-        <SvgIcon svg={require('../../icons/data-cubes.svg')}/>
+        <SvgIcon svg={require("../../icons/data-cubes.svg")} />
       </div>
       <div className="label">{mode === NoDataView.NO_CUBE ? STRINGS.noQueryableDataCubes : STRINGS.noConnectedData}</div>
     </div>;
@@ -112,8 +110,8 @@ export class NoDataView extends React.Component <NoDataViewProps, NoDataViewStat
         {this.renderSettingsIcon()}
       </NoDataHeaderBar>
       <div className="container">
-        { this.renderTitle(mode) }
-        { stateful ? this.renderLink(mode) : null }
+        {this.renderTitle(mode)}
+        {stateful ? this.renderLink(mode) : null}
       </div>
     </div>;
   }

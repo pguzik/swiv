@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,34 +15,31 @@
  * limitations under the License.
  */
 
-import * as Q from 'q';
-import * as express from 'express';
-import { Response } from 'express';
-import * as supertest from 'supertest';
-import mime = require('mime');
-import * as bodyParser from 'body-parser';
-
-import { AppSettings } from '../../../common/models/index';
-import { SwivRequest } from '../../utils/index';
-
-import { AppSettingsMock } from '../../../common/models/app-settings/app-settings.mock';
-
-import * as plyqlRouter from './plyql';
+import * as bodyParser from "body-parser";
+import * as express from "express";
+import { Response } from "express";
+import * as mime from "mime";
+import * as Q from "q";
+import * as supertest from "supertest";
+import { AppSettingsFixtures } from "../../../common/models/app-settings/app-settings.fixtures";
+import { AppSettings } from "../../../common/models/index";
+import { SwivRequest } from "../../utils/index";
+import { GetSettingsOptions } from "../../utils/settings-manager/settings-manager";
+import * as plyqlRouter from "./plyql";
 
 var app = express();
 
 app.use(bodyParser.json());
 
-var appSettings: AppSettings = AppSettingsMock.wikiOnlyWithExecutor();
+var appSettings: AppSettings = AppSettingsFixtures.wikiOnlyWithExecutor();
 app.use((req: SwivRequest, res: Response, next: Function) => {
   req.user = null;
-  req.version = '0.9.4';
-  req.getSettings = (dataCubeOfInterest?: string) => Q(appSettings);
+  req.version = "0.9.4";
+  req.getSettings = (dataCubeOfInterest?: GetSettingsOptions) => Q(appSettings);
   next();
 });
 
-app.use('/', plyqlRouter);
-
+app.use("/", plyqlRouter);
 
 var pageQuery = "SELECT SUM(added) as Added FROM `wiki` GROUP BY page ORDER BY Added DESC LIMIT 10;";
 var timeQuery = "SELECT TIME_BUCKET(time, 'PT1H', 'Etc/UTC') as TimeByHour, SUM(added) as Added FROM `wiki` GROUP BY 1 ORDER BY TimeByHour ASC";
@@ -91,18 +89,18 @@ function responseHandler(err: any, res: any) {
 }
 
 function testPlyqlHelper(testName: string, contentType: string, queryStr: string) {
-  it(testName, (testComplete) => {
+  it(testName, (testComplete: any) => {
     supertest(app)
-      .post('/')
-      .set('Content-Type', "application/json")
+      .post("/")
+      .set("Content-Type", "application/json")
       .send(queryStr)
-      .expect('Content-Type', contentType + "; charset=utf-8")
+      .expect("Content-Type", contentType + "; charset=utf-8")
       .expect(200, testComplete);
   });
 }
 
-describe('plyql router', () => {
+describe("plyql router", () => {
   tests.forEach(function(test) {
-    testPlyqlHelper(test.testName, mime.lookup(test.outputType), JSON.stringify(test, null, 2));
+    testPlyqlHelper(test.testName, mime.getType(test.outputType), JSON.stringify(test, null, 2));
   });
 });

@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,27 +15,27 @@
  * limitations under the License.
  */
 
-import { expect } from 'chai';
-import { getVisibleSegments, Positioning } from './sizing';
+import { expect } from "chai";
+import { getVisibleSegments } from "./sizing";
 
-describe('Sizing', () => {
-  describe('getVisibleSegments', () => {
+describe("Sizing", () => {
+  describe("getVisibleSegments", () => {
 
-    it('works with basic stuff', () => {
+    it("works with basic stuff", () => {
       expect(getVisibleSegments([100, 100, 100, 100, 100], 0, 250)).to.deep.equal({
         startIndex: 0,
         shownColumns: 3
       });
     });
 
-    it('works with slight offset', () => {
+    it("works with slight offset", () => {
       expect(getVisibleSegments([100, 100, 100, 100, 100], 90, 200)).to.deep.equal({
         startIndex: 0,
         shownColumns: 3
       });
     });
 
-    it('works with more offset', () => {
+    it("works with more offset", () => {
       expect(getVisibleSegments([100, 100, 100, 100, 100], 150, 200)).to.deep.equal({
         startIndex: 1,
         shownColumns: 3
@@ -44,5 +45,3 @@ describe('Sizing', () => {
   });
 
 });
-
-

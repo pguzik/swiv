@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,47 +15,46 @@
  * limitations under the License.
  */
 
-import * as numeral from 'numeral';
-import { Timezone } from 'chronoshift';
+import { Duration, Timezone } from "chronoshift";
+import * as numeral from "numeral";
 
-import { NumberRange, TimeRange, LiteralExpression } from 'swiv-plywood';
+import { $, LiteralExpression, NumberRange, TimeRange, TimeRangeExpression } from "plywood";
+import { STRINGS } from "../../../client/config/constants";
 
-import { Dimension, FilterClause, Filter } from '../../models/index';
-import { DisplayYear, formatTimeRange } from '../../utils/time/time';
+import { Dimension, Filter, FilterClause, FilterSelection } from "../../models";
+import { DisplayYear, formatTimeRange } from "../../utils/time/time";
 
-export interface Formatter {
-  (n: number): string;
-}
+export type Formatter = (n: number) => string;
 
-var scales: Lookup<Lookup<number>> = {
-  'a': {
-    '': 1,
-    'k': 1e3,
-    'm': 1e6,
-    'b': 1e9,
-    't': 1e12
+const scales: Record<string, Record<string, number>> = {
+  a: {
+    "": 1,
+    "k": 1e3,
+    "m": 1e6,
+    "b": 1e9,
+    "t": 1e12
   },
-  'b': {
-    'B': 1,
-    'KB': 1024,
-    'MB': 1024 * 1024,
-    'GB': 1024 * 1024 * 1024,
-    'TB': 1024 * 1024 * 1024 * 1024,
-    'PB': 1024 * 1024 * 1024 * 1024 * 1024,
-    'EB': 1024 * 1024 * 1024 * 1024 * 1024 * 1024,
-    'ZB': 1024 * 1024 * 1024 * 1024 * 1024 * 1024 * 1024,
-    'YB': 1024 * 1024 * 1024 * 1024 * 1024 * 1024 * 1024 * 1024
+  b: {
+    B: 1,
+    KB: 1024,
+    MB: 1024 * 1024,
+    GB: 1024 * 1024 * 1024,
+    TB: 1024 * 1024 * 1024 * 1024,
+    PB: 1024 * 1024 * 1024 * 1024 * 1024,
+    EB: 1024 * 1024 * 1024 * 1024 * 1024 * 1024,
+    ZB: 1024 * 1024 * 1024 * 1024 * 1024 * 1024 * 1024,
+    YB: 1024 * 1024 * 1024 * 1024 * 1024 * 1024 * 1024 * 1024
   }
 };
 
 export function getMiddleNumber(values: number[]): number {
-  var filteredAbsData: number[] = [];
-  for (var v of values) {
+  const filteredAbsData: number[] = [];
+  for (let v of values) {
     if (v === 0 || isNaN(v) || !isFinite(v)) continue;
     filteredAbsData.push(Math.abs(v));
   }
 
-  var n = filteredAbsData.length;
+  const n = filteredAbsData.length;
   if (n) {
     filteredAbsData.sort((a, b) => b - a);
     return filteredAbsData[Math.ceil((n - 1) / 2)];
@@ -64,31 +64,31 @@ export function getMiddleNumber(values: number[]): number {
 }
 
 export function formatterFromData(values: number[], format: string): Formatter {
-  var match = format.match(/^(\S*)( ?)([ab])$/);
+  const match = format.match(/^(\S*)( ?)([ab])$/);
   if (match) {
-    var numberFormat = match[1];
-    var space = match[2];
-    var formatType = match[3];
-    var middle = getMiddleNumber(values);
-    var formatMiddle = numeral(middle).format('0 ' + formatType);
-    var unit = formatMiddle.split(' ')[1] || '';
-    var scale = scales[formatType][unit];
-    var append = unit ? space + unit : '';
+    const numberFormat = match[1];
+    const space = match[2];
+    const formatType = match[3];
+    const middle = getMiddleNumber(values);
+    const formatMiddle = numeral(middle).format("0 " + formatType);
+    const unit = formatMiddle.split(" ")[1] || "";
+    const scale = scales[formatType][unit];
+    const append = unit ? space + unit : "";
 
     return (n: number) => {
-      if (isNaN(n) || !isFinite(n)) return '-';
+      if (isNaN(n) || !isFinite(n)) return "-";
       return numeral(n / scale).format(numberFormat) + append;
     };
   } else {
     return (n: number) => {
-      if (isNaN(n) || !isFinite(n)) return '-';
+      if (isNaN(n) || !isFinite(n)) return "-";
       return numeral(n).format(format);
     };
   }
 }
 
 export function formatNumberRange(value: NumberRange) {
-  return `${formatValue(value.start || `any`)} to ${formatValue(value.end  || `any`)}`;
+  return `${formatValue(value.start || "any")} to ${formatValue(value.end || "any")}`;
 }
 
 export function formatValue(value: any, timezone?: Timezone, displayYear?: DisplayYear): string {
@@ -97,63 +97,117 @@ export function formatValue(value: any, timezone?: Timezone, displayYear?: Displ
   } else if (TimeRange.isTimeRange(value)) {
     return formatTimeRange(value, timezone, displayYear);
   } else {
-    return '' + value;
+    return "" + value;
   }
 }
 
 export function formatFilterClause(dimension: Dimension, clause: FilterClause, timezone: Timezone, verbose?: boolean): string {
-  var { title, values } = this.getFormattedClause(dimension, clause, timezone, verbose);
+  const { title, values } = this.getFormattedClause(dimension, clause, timezone, verbose);
   return title ? `${title} ${values}` : values;
 }
 
-export function getFormattedClause(dimension: Dimension, clause: FilterClause, timezone: Timezone, verbose?: boolean): {title: string, values: string} {
-  var dimKind = dimension.kind;
-  var values: string;
-  var clauseSet = clause.getLiteralSet();
+export function getFormattedClause(dimension: Dimension, clause: FilterClause, timezone: Timezone, verbose?: boolean): { title: string, values: string } {
+  const dimKind = dimension.kind;
+  let values: string;
+  const clauseSet = clause.getLiteralSet();
 
   function getClauseLabel() {
-    var dimTitle = dimension.title;
-    if (dimKind === 'time' && !verbose) return '';
-    var delimiter = ["regex", "contains"].indexOf(clause.action) !== -1 ? ' ~' : ":";
+    const dimTitle = dimension.title;
+    if (dimKind === "time" && !verbose) return "";
+    const delimiter = ["regex", "contains"].indexOf(clause.action) !== -1 ? " ~" : ":";
 
     if (clauseSet && clauseSet.elements.length > 1 && !verbose) return `${dimTitle}`;
     return `${dimTitle}${delimiter}`;
   }
 
   switch (dimKind) {
-    case 'boolean':
-    case 'number':
-    case 'string':
+    case "boolean":
+    case "number":
+    case "string":
       if (verbose) {
         values = clauseSet.toString();
       } else {
-        var setElements = clauseSet.elements;
+        const setElements = clauseSet.elements;
         if (setElements.length > 1) {
           values = `(${setElements.length})`;
         } else {
           values = formatValue(setElements[0]);
         }
       }
-      if (clause.action === 'match') values = `/${values}/`;
+      if (clause.action === "match") values = `/${values}/`;
       if (clause.action === Filter.CONTAINS) values = `"${values}"`;
 
       break;
-
-    case 'time':
-      var selection = (clause.selection as LiteralExpression);
-      var selectionType = selection.type;
-      if (selectionType === 'TIME_RANGE') {
-        var timeRange = selection.value as TimeRange;
-        values = formatTimeRange(timeRange, timezone, DisplayYear.IF_DIFF);
-      } else if (selectionType === "SET/TIME") {
-        values = clauseSet.toString();
-      }
+    case "time":
+      values = getFormattedTimeClauseValues(clause, timezone);
       break;
-
     default:
       throw new Error(`unknown kind ${dimKind}`);
   }
 
-  return {title: getClauseLabel(), values};
+  return { title: getClauseLabel(), values };
 }
 
+const $now = $(FilterClause.NOW_REF_NAME);
+const $max = $(FilterClause.MAX_TIME_REF_NAME);
+
+function getFormattedTimeClauseValues(clause: FilterClause, timezone: Timezone): string {
+  const { relative, selection } = clause;
+
+  if (isLatestDuration(relative, selection)) {
+    return `${STRINGS.latest} ${getQualifiedDurationDescription(selection)}`;
+  } else if (isPreviousDuration(relative, selection)) {
+    return `${STRINGS.previous} ${getQualifiedDurationDescription(selection)}`;
+  } else if (isCurrentDuration(relative, selection)) {
+    return `${STRINGS.current} ${getQualifiedDurationDescription(selection)}`;
+  } else if (selection instanceof LiteralExpression && selection.value instanceof TimeRange) {
+    return formatTimeRange(selection.value, timezone, DisplayYear.IF_DIFF);
+  } else {
+    throw Error(`unsupported time filter clause: ${clause.selection}`);
+  }
+}
+
+function isLatestDuration(isRelative: boolean, selection: FilterSelection): selection is TimeRangeExpression {
+  function isEarlierTimeRange(selection: TimeRangeExpression) {
+    return selection.step < 0;
+  }
+
+  return isRelative
+    && selection instanceof TimeRangeExpression
+    && selection.getHeadOperand().equals($max)
+    && isEarlierTimeRange(selection);
+}
+
+function isCurrentDuration(isRelative: boolean, selection: FilterSelection): selection is TimeRangeExpression {
+  function isCurrentTimeRange(selection: TimeRangeExpression) {
+    return selection.step === 1;
+  }
+
+  return isRelative
+    && selection instanceof TimeRangeExpression
+    && selection.getHeadOperand().equals($now)
+    && isCurrentTimeRange(selection);
+}
+
+function isPreviousDuration(isRelative: boolean, selection: FilterSelection): selection is TimeRangeExpression {
+  function isPreviousTimeRange(selection: TimeRangeExpression) {
+    return selection.step === -1;
+  }
+
+  return isRelative
+    && selection instanceof TimeRangeExpression
+    && selection.getHeadOperand().equals($now)
+    && isPreviousTimeRange(selection);
+}
+
+function getQualifiedDurationDescription(selection: TimeRangeExpression) {
+  return normalizeDurationDescription(selection.getQualifiedDurationDescription(), selection.duration);
+}
+
+function normalizeDurationDescription(description: string, duration: Duration) {
+  if (duration.toString() === "P3M") {
+    return STRINGS.quarter.toLowerCase();
+  } else {
+    return description;
+  }
+}

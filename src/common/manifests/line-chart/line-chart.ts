@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +15,22 @@
  * limitations under the License.
  */
 
-import { List } from 'immutable';
-import { $, SortAction } from 'swiv-plywood';
-import { Splits, DataCube, SplitCombine, Colors, Dimension } from '../../models/index';
-import {
-  CircumstancesHandler
-} from '../../utils/circumstances-handler/circumstances-handler';
-import { Manifest, Resolve } from '../../models/manifest/manifest';
+import { List } from "immutable";
+import { $, SortExpression } from "plywood";
+import { Colors, SplitCombine, Splits } from "../../models";
+import { Manifest, Resolve } from "../../models/manifest/manifest";
+import { Predicates } from "../../utils/rules/predicates";
+import { visualizationDependentEvaluatorBuilder } from "../../utils/rules/visualization-dependent-evaluator";
 
-var handler = CircumstancesHandler.EMPTY()
-
-  .when((splits: Splits, dataCube: DataCube) => !(dataCube.getDimensionByKind('time') || dataCube.getDimensionByKind('number')))
+const rulesEvaluator = visualizationDependentEvaluatorBuilder
+  .when(({ dataCube }) => !(dataCube.getDimensionsByKind("time").length || dataCube.getDimensionsByKind("number").length))
   .then(() => Resolve.NEVER)
 
-  .when(CircumstancesHandler.noSplits())
-  .then((splits: Splits, dataCube: DataCube) => {
-    let continuousDimensions = dataCube.getDimensionByKind('time').concat(dataCube.getDimensionByKind('number'));
-    return Resolve.manual(3, 'This visualization requires a continuous dimension split',
-      continuousDimensions.toArray().map((continuousDimension) => {
+  .when(Predicates.noSplits())
+  .then(({ splits, dataCube }) => {
+    const continuousDimensions = dataCube.getDimensionsByKind("time").concat(dataCube.getDimensionsByKind("number"));
+    return Resolve.manual(3, "This visualization requires a continuous dimension split",
+      continuousDimensions.map(continuousDimension => {
         return {
           description: `Add a split on ${continuousDimension.title}`,
           adjustment: {
@@ -42,25 +41,25 @@ var handler = CircumstancesHandler.EMPTY()
     );
   })
 
-  .when(CircumstancesHandler.areExactSplitKinds('time'))
-  .or(CircumstancesHandler.areExactSplitKinds('number'))
-  .then((splits: Splits, dataCube: DataCube, colors: Colors, current: boolean) => {
-    var score = 4;
+  .when(Predicates.areExactSplitKinds("time"))
+  .or(Predicates.areExactSplitKinds("number"))
+  .then(({ splits, dataCube, colors, isSelectedVisualization }) => {
+    let score = 4;
 
-    var continuousSplit = splits.get(0);
-    var continuousDimension = dataCube.getDimensionByExpression(continuousSplit.expression);
-    var sortStrategy = continuousDimension.sortStrategy;
+    let continuousSplit = splits.get(0);
+    const continuousDimension = dataCube.getDimensionByExpression(continuousSplit.expression);
+    const sortStrategy = continuousDimension.sortStrategy;
 
-    var sortAction: SortAction = null;
-    if (sortStrategy && sortStrategy !== 'self') {
-      sortAction = new SortAction({
+    let sortAction: SortExpression = null;
+    if (sortStrategy && sortStrategy !== "self") {
+      sortAction = new SortExpression({
         expression: $(sortStrategy),
-        direction: SortAction.ASCENDING
+        direction: SortExpression.ASCENDING
       });
     } else {
-      sortAction = new SortAction({
+      sortAction = new SortExpression({
         expression: $(continuousDimension.name),
-        direction: SortAction.ASCENDING
+        direction: SortExpression.ASCENDING
       });
     }
 
@@ -68,13 +67,13 @@ var handler = CircumstancesHandler.EMPTY()
 
     // Fix time sort
     if (!sortAction.equals(continuousSplit.sortAction)) {
-      continuousSplit = continuousSplit.changeSortAction(sortAction);
+      continuousSplit = continuousSplit.changeSortExpression(sortAction);
       autoChanged = true;
     }
 
     // Fix time limit
-    if (continuousSplit.limitAction && continuousDimension.kind === 'time') {
-      continuousSplit = continuousSplit.changeLimitAction(null);
+    if (continuousSplit.limitAction && continuousDimension.kind === "time") {
+      continuousSplit = continuousSplit.changeLimitExpression(null);
       autoChanged = true;
     }
 
@@ -82,39 +81,39 @@ var handler = CircumstancesHandler.EMPTY()
       autoChanged = true;
     }
 
-    if (continuousDimension.kind === 'time') score += 3;
+    if (continuousDimension.kind === "time") score += 3;
 
-    if (!autoChanged) return Resolve.ready(current ? 10 : score);
-    return Resolve.automatic(score, {splits: new Splits(List([continuousSplit]))});
+    if (!autoChanged) return Resolve.ready(isSelectedVisualization ? 10 : score);
+    return Resolve.automatic(score, { splits: new Splits(List([continuousSplit])) });
   })
 
-  .when(CircumstancesHandler.areExactSplitKinds('time', '*'))
-  .then((splits: Splits, dataCube: DataCube, colors: Colors) => {
-    var timeSplit = splits.get(0);
-    var timeDimension = timeSplit.getDimension(dataCube.dimensions);
+  .when(Predicates.areExactSplitKinds("time", "*"))
+  .then(({ splits, dataCube, colors }) => {
+    let timeSplit = splits.get(0);
+    const timeDimension = timeSplit.getDimension(dataCube.dimensions);
 
-    var sortAction: SortAction = new SortAction({
+    const sortAction: SortExpression = new SortExpression({
       expression: $(timeDimension.name),
-      direction: SortAction.ASCENDING
+      direction: SortExpression.ASCENDING
     });
 
     // Fix time sort
     if (!sortAction.equals(timeSplit.sortAction)) {
-      timeSplit = timeSplit.changeSortAction(sortAction);
+      timeSplit = timeSplit.changeSortExpression(sortAction);
     }
 
     // Fix time limit
     if (timeSplit.limitAction) {
-      timeSplit = timeSplit.changeLimitAction(null);
+      timeSplit = timeSplit.changeLimitExpression(null);
     }
 
     let colorSplit = splits.get(1);
 
     if (!colorSplit.sortAction) {
-      colorSplit = colorSplit.changeSortAction(dataCube.getDefaultSortAction());
+      colorSplit = colorSplit.changeSortExpression(dataCube.getDefaultSortExpression());
     }
 
-    var colorSplitDimension = dataCube.getDimensionByExpression(colorSplit.expression);
+    const colorSplitDimension = dataCube.getDimensionByExpression(colorSplit.expression);
     if (!colors || colors.dimension !== colorSplitDimension.name) {
       colors = Colors.fromLimit(colorSplitDimension.name, 5);
     }
@@ -125,39 +124,39 @@ var handler = CircumstancesHandler.EMPTY()
     });
   })
 
-  .when(CircumstancesHandler.areExactSplitKinds('*', 'time'))
-  .or(CircumstancesHandler.areExactSplitKinds('*', 'number'))
-  .then((splits: Splits, dataCube: DataCube, colors: Colors) => {
-    var timeSplit = splits.get(1);
-    var timeDimension = timeSplit.getDimension(dataCube.dimensions);
+  .when(Predicates.areExactSplitKinds("*", "time"))
+  .or(Predicates.areExactSplitKinds("*", "number"))
+  .then(({ splits, dataCube, colors }) => {
+    let timeSplit = splits.get(1);
+    const timeDimension = timeSplit.getDimension(dataCube.dimensions);
 
     let autoChanged = false;
 
-    var sortAction: SortAction = new SortAction({
+    const sortAction: SortExpression = new SortExpression({
       expression: $(timeDimension.name),
-      direction: SortAction.ASCENDING
+      direction: SortExpression.ASCENDING
     });
 
     // Fix time sort
     if (!sortAction.equals(timeSplit.sortAction)) {
-      timeSplit = timeSplit.changeSortAction(sortAction);
+      timeSplit = timeSplit.changeSortExpression(sortAction);
       autoChanged = true;
     }
 
     // Fix time limit
     if (timeSplit.limitAction) {
-      timeSplit = timeSplit.changeLimitAction(null);
+      timeSplit = timeSplit.changeLimitExpression(null);
       autoChanged = true;
     }
 
     let colorSplit = splits.get(0);
 
     if (!colorSplit.sortAction) {
-      colorSplit = colorSplit.changeSortAction(dataCube.getDefaultSortAction());
+      colorSplit = colorSplit.changeSortExpression(dataCube.getDefaultSortExpression());
       autoChanged = true;
     }
 
-    var colorSplitDimension = dataCube.getDimensionByExpression(colorSplit.expression);
+    const colorSplitDimension = dataCube.getDimensionByExpression(colorSplit.expression);
     if (!colors || colors.dimension !== colorSplitDimension.name) {
       colors = Colors.fromLimit(colorSplitDimension.name, 5);
       autoChanged = true;
@@ -170,12 +169,12 @@ var handler = CircumstancesHandler.EMPTY()
     });
   })
 
-  .when(CircumstancesHandler.haveAtLeastSplitKinds('time'))
-  .then((splits: Splits, dataCube: DataCube) => {
-    let timeSplit = splits.toArray().filter((split) => split.getDimension(dataCube.dimensions).kind === 'time')[0];
-    return Resolve.manual(3, 'Too many splits on the line chart', [
+  .when(Predicates.haveAtLeastSplitKinds("time"))
+  .then(({ splits, dataCube }) => {
+    let timeSplit = splits.toArray().filter(split => split.getDimension(dataCube.dimensions).kind === "time")[0];
+    return Resolve.manual(3, "Too many splits on the line chart", [
       {
-        description: `Remove all but the time split`,
+        description: "Remove all but the time split",
         adjustment: {
           splits: Splits.fromSplitCombine(timeSplit)
         }
@@ -183,25 +182,23 @@ var handler = CircumstancesHandler.EMPTY()
     ]);
   })
 
-  .otherwise(
-    (splits: Splits, dataCube: DataCube) => {
-      let continuousDimensions = dataCube.getDimensionByKind('time').concat(dataCube.getDimensionByKind('number'));
-      return Resolve.manual(3, 'The Line Chart needs one continuous dimension split',
-        continuousDimensions.toArray().map((continuousDimension) => {
-          return {
-            description: `Split on ${continuousDimension.title} instead`,
-            adjustment: {
-              splits: Splits.fromSplitCombine(SplitCombine.fromExpression(continuousDimension.expression))
-            }
-          };
-        })
-      );
-    }
-  );
-
+  .otherwise(({ splits, dataCube }) => {
+    let continuousDimensions = dataCube.getDimensionsByKind("time").concat(dataCube.getDimensionsByKind("number"));
+    return Resolve.manual(3, "The Line Chart needs one continuous dimension split",
+      continuousDimensions.map(continuousDimension => {
+        return {
+          description: `Split on ${continuousDimension.title} instead`,
+          adjustment: {
+            splits: Splits.fromSplitCombine(SplitCombine.fromExpression(continuousDimension.expression))
+          }
+        };
+      })
+    );
+  })
+  .build();
 
 export const LINE_CHART_MANIFEST = new Manifest(
-  'line-chart',
-  'Line Chart',
-  handler.evaluate.bind(handler)
+  "line-chart",
+  "Line Chart",
+  rulesEvaluator
 );

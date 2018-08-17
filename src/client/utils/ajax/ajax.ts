@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,27 +15,27 @@
  * limitations under the License.
  */
 
-import * as Q from 'q';
-import * as Qajax from 'qajax';
-import { $, Expression, Executor, Dataset, ChainExpression, SplitAction, Environment } from 'swiv-plywood';
+import { ChainableExpression, Dataset, Environment, Executor, Expression, SplitExpression } from "plywood";
+import * as Qajax from "qajax";
 
 Qajax.defaults.timeout = 0; // We'll manage the timeout per request.
 
 function getSplitsDescription(ex: Expression): string {
   var splits: string[] = [];
-  ex.forEach((ex) => {
-    if (ex instanceof ChainExpression) {
-      ex.actions.forEach((action) => {
-        if (action instanceof SplitAction) {
+  ex.forEach(ex => {
+    if (ex instanceof ChainableExpression) {
+      ex.getArgumentExpressions().forEach(action => {
+        if (action instanceof SplitExpression) {
           splits.push(action.firstSplitExpression().toString());
         }
       });
     }
   });
-  return splits.join(';');
+  return splits.join(";");
 }
 
 var reloadRequested = false;
+
 function reload() {
   if (reloadRequested) return;
   reloadRequested = true;
@@ -50,7 +51,7 @@ function parseOrNull(json: any): any {
 }
 
 export interface AjaxOptions {
-  method: 'GET' | 'POST';
+  method: "GET" | "POST";
   url: string;
   data?: any;
 }
@@ -61,7 +62,7 @@ export class Ajax {
   static settingsVersionGetter: () => number;
   static onUpdate: () => void;
 
-  static query(options: AjaxOptions): Q.Promise<any> {
+  static query(options: AjaxOptions): Promise<any> {
     var data = options.data;
 
     if (data) {
@@ -77,41 +78,41 @@ export class Ajax {
       .timeout(60000)
       .then(Qajax.filterSuccess)
       .then(Qajax.toJSON)
-      .then((res) => {
-        if (res && res.action === 'update' && Ajax.onUpdate) Ajax.onUpdate();
+      .then(res => {
+        if (res && res.action === "update" && Ajax.onUpdate) Ajax.onUpdate();
         return res;
       })
       .catch((xhr: XMLHttpRequest | Error): Dataset => {
         if (!xhr) return null; // TS needs this
         if (xhr instanceof Error) {
-          throw new Error('client timeout');
+          throw new Error("client timeout");
         } else {
           var jsonError = parseOrNull(xhr.responseText);
           if (jsonError) {
-            if (jsonError.action === 'reload') {
+            if (jsonError.action === "reload") {
               reload();
-            } else if (jsonError.action === 'update' && Ajax.onUpdate) {
+            } else if (jsonError.action === "update" && Ajax.onUpdate) {
               Ajax.onUpdate();
             }
             throw new Error(jsonError.message || jsonError.error);
           } else {
-            throw new Error(xhr.responseText || 'connection fail');
+            throw new Error(xhr.responseText || "connection fail");
           }
         }
-      });
+      }) as any;
   }
 
   static queryUrlExecutorFactory(name: string, url: string): Executor {
     return (ex: Expression, env: Environment = {}) => {
       return Ajax.query({
         method: "POST",
-        url: url + '?by=' + getSplitsDescription(ex),
+        url: url + "?by=" + getSplitsDescription(ex),
         data: {
           dataCube: name,
           expression: ex.toJS(),
           timezone: env ? env.timezone : null
         }
-      }).then((res) => Dataset.fromJS(res.result));
+      }).then(res => Dataset.fromJS(res.result));
     };
   }
 }

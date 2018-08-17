@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,32 +15,30 @@
  * limitations under the License.
  */
 
-import { expect } from 'chai';
-import * as React from 'react';
-import * as TestUtils from 'react-addons-test-utils';
+import { expect } from "chai";
+import * as React from "react";
+import * as TestUtils from "react-dom/test-utils";
+import { DimensionFixtures, EssenceFixtures, TimekeeperFixtures } from "../../../common/models/fixtures";
+import { findDOMNode, renderIntoDocument } from "../../utils/test-utils";
+import { NumberRangePicker } from "./number-range-picker";
 
-import { findDOMNode } from '../../utils/test-utils/index';
-
-import { NumberRangePicker } from './number-range-picker';
-import { EssenceMock, TimekeeperMock, DimensionMock } from '../../../common/models/mocks';
-
-describe('NumberRangePicker', () => {
-  it('adds the correct class', () => {
-    var renderedComponent = TestUtils.renderIntoDocument(
+describe("NumberRangePicker", () => {
+  it("adds the correct class", () => {
+    var renderedComponent = renderIntoDocument(
       <NumberRangePicker
         start={2}
         end={10}
         onRangeStartChange={null}
-        essence={EssenceMock.wikiTotals()}
-        timekeeper={TimekeeperMock.fixed()}
-        dimension={DimensionMock.countryURL()}
+        essence={EssenceFixtures.wikiTotals()}
+        timekeeper={TimekeeperFixtures.fixed()}
+        dimension={DimensionFixtures.countryURL()}
         onRangeEndChange={null}
         exclude={false}
       />
     );
 
-    expect(TestUtils.isCompositeComponent(renderedComponent), 'should be composite').to.equal(true);
-    expect((findDOMNode(renderedComponent) as any).className, 'should contain class').to.contain('number-range-picker');
+    expect(TestUtils.isCompositeComponent(renderedComponent), "should be composite").to.equal(true);
+    expect(findDOMNode(renderedComponent).className, "should contain class").to.contain("number-range-picker");
   });
 
 });

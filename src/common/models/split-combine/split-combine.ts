@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,37 +15,39 @@
  * limitations under the License.
  */
 
-import { List } from 'immutable';
-import { Class, Instance, isInstanceOf } from 'immutable-class';
-import { Timezone, Duration, day, hour } from 'chronoshift';
-import { $, Expression, ChainExpression, ExpressionJS, Action, ActionJS, SortAction, LimitAction, TimeBucketAction, NumberBucketAction } from 'swiv-plywood';
-import { Dimension } from '../dimension/dimension';
+import { Duration } from "chronoshift";
+import { Class, Instance } from "immutable-class";
+import { $, Expression, ExpressionJS, LimitExpression, NumberBucketExpression, RefExpression, SortExpression, TimeBucketExpression } from "plywood";
+import { Dimension } from "../dimension/dimension";
+import { Dimensions } from "../dimension/dimensions";
 
 export interface SplitCombineValue {
   expression: Expression;
-  bucketAction: Action;
-  sortAction: SortAction;
-  limitAction: LimitAction;
+  bucketAction: Expression;
+  sortAction: SortExpression;
+  limitAction: LimitExpression;
 }
 
-export type SplitCombineJS = string | SplitCombineJSFull
+export type SplitCombineJS = string | SplitCombineJSFull;
+
 export interface SplitCombineJSFull {
   expression: ExpressionJS;
-  bucketAction?: ActionJS;
-  sortAction?: ActionJS;
-  limitAction?: ActionJS;
+  bucketAction?: ExpressionJS;
+  sortAction?: ExpressionJS;
+  limitAction?: ExpressionJS;
 }
 
 export interface SplitCombineContext {
-  dimensions: List<Dimension>;
+  dimensions: Dimensions;
 }
 
-var check: Class<SplitCombineValue, SplitCombineJS>;
+let check: Class<SplitCombineValue, SplitCombineJS>;
+
 export class SplitCombine implements Instance<SplitCombineValue, SplitCombineJS> {
-  static SORT_ON_DIMENSION_PLACEHOLDER = '__SWIV_SORT_ON_DIMENSIONS__';
+  static SORT_ON_DIMENSION_PLACEHOLDER = "__SWIV_SORT_ON_DIMENSIONS__";
 
   static isSplitCombine(candidate: any): candidate is SplitCombine {
-    return isInstanceOf(candidate, SplitCombine);
+    return candidate instanceof SplitCombine;
   }
 
   static fromExpression(expression: Expression): SplitCombine {
@@ -57,9 +60,9 @@ export class SplitCombine implements Instance<SplitCombineValue, SplitCombineJS>
   }
 
   static fromJS(parameters: SplitCombineJS, context?: SplitCombineContext): SplitCombine {
-    if (typeof parameters === 'string') {
-      if (!context) throw new Error('must have context for string split');
-      var dimension = context.dimensions.find(d => d.name === parameters);
+    if (typeof parameters === "string") {
+      if (!context) throw new Error("must have context for string split");
+      const dimension = context.dimensions.getDimensionByName(parameters);
       if (!dimension) throw new Error(`can not find dimension ${parameters}`);
       return new SplitCombine({
         expression: dimension.expression,
@@ -68,29 +71,28 @@ export class SplitCombine implements Instance<SplitCombineValue, SplitCombineJS>
         limitAction: null
       });
     } else {
-      var value: SplitCombineValue = {
+      const value: SplitCombineValue = {
         expression: Expression.fromJSLoose(parameters.expression),
         bucketAction: null,
         sortAction: null,
         limitAction: null
       };
 
-      if (parameters.bucketAction) value.bucketAction = Action.fromJS(parameters.bucketAction);
-      if (parameters.sortAction) value.sortAction = SortAction.fromJS(parameters.sortAction);
-      if (parameters.limitAction) value.limitAction = LimitAction.fromJS(parameters.limitAction);
+      if (parameters.bucketAction) value.bucketAction = Expression.fromJS(parameters.bucketAction);
+      if (parameters.sortAction) value.sortAction = SortExpression.fromJS(parameters.sortAction);
+      if (parameters.limitAction) value.limitAction = LimitExpression.fromJS(parameters.limitAction);
       return new SplitCombine(value);
     }
   }
 
-
   public expression: Expression;
-  public bucketAction: Action;
-  public sortAction: SortAction;
-  public limitAction: LimitAction;
+  public bucketAction: Expression;
+  public sortAction: SortExpression;
+  public limitAction: LimitExpression;
 
   constructor(parameters: SplitCombineValue) {
     this.expression = parameters.expression;
-    if (!this.expression) throw new Error('must have expression');
+    if (!this.expression) throw new Error("must have expression");
     this.bucketAction = parameters.bucketAction;
     this.sortAction = parameters.sortAction;
     this.limitAction = parameters.limitAction;
@@ -106,7 +108,7 @@ export class SplitCombine implements Instance<SplitCombineValue, SplitCombineJS>
   }
 
   public toJS(): SplitCombineJS {
-    var js: SplitCombineJSFull = {
+    const js: SplitCombineJSFull = {
       expression: this.expression.toJS()
     };
     if (this.bucketAction) js.bucketAction = this.bucketAction.toJS();
@@ -124,7 +126,7 @@ export class SplitCombine implements Instance<SplitCombineValue, SplitCombineJS>
   }
 
   public equals(other: SplitCombine): boolean {
-    var { expression, bucketAction, sortAction, limitAction } = this;
+    const { expression, bucketAction, sortAction, limitAction } = this;
     return SplitCombine.isSplitCombine(other) &&
       expression.equals(other.expression) &&
       Boolean(bucketAction) === Boolean(other.bucketAction) &&
@@ -136,12 +138,23 @@ export class SplitCombine implements Instance<SplitCombineValue, SplitCombineJS>
   }
 
   public equalsByExpression(other: SplitCombine): boolean {
-    var { expression } = this;
+    const { expression } = this;
     return SplitCombine.isSplitCombine(other) && expression.equals(other.expression);
   }
 
+  public withTimeShift(filter: Expression, shift: Duration): SplitCombine {
+    const { expression } = this;
+    if (expression instanceof RefExpression && expression.name === "__time") {
+      return new SplitCombine({
+        ...this.valueOf(),
+        expression: filter.then(expression).fallback(expression.timeShift(shift))
+      });
+    }
+    return this;
+  }
+
   public toSplitExpression(): Expression {
-    var { expression, bucketAction } = this;
+    const { expression, bucketAction } = this;
     if (!bucketAction) return expression;
     return expression.performAction(bucketAction);
   }
@@ -150,46 +163,46 @@ export class SplitCombine implements Instance<SplitCombineValue, SplitCombineJS>
     return this.toSplitExpression().toString();
   }
 
-  public getNormalizedSortAction(dimensions: List<Dimension>): SortAction {
+  public getNormalizedSortExpression(dimensions: Dimensions): SortExpression {
     const { sortAction } = this;
-    var dimension = this.getDimension(dimensions);
+    const dimension = this.getDimension(dimensions);
     if (!sortAction) return null;
     if (sortAction.refName() === dimension.name) {
-      return sortAction.changeExpression($(SplitCombine.SORT_ON_DIMENSION_PLACEHOLDER)) as SortAction;
+      return sortAction.changeExpression($(SplitCombine.SORT_ON_DIMENSION_PLACEHOLDER)) as SortExpression;
     }
     return sortAction;
   }
 
-  public changeBucketAction(bucketAction: Action): SplitCombine {
-    var value = this.valueOf();
+  public changeBucketAction(bucketAction: Expression): SplitCombine {
+    const value = this.valueOf();
     value.bucketAction = bucketAction;
     return new SplitCombine(value);
   }
 
-  public changeSortAction(sortAction: SortAction): SplitCombine {
-    var value = this.valueOf();
+  public changeSortExpression(sortAction: SortExpression): SplitCombine {
+    const value = this.valueOf();
     value.sortAction = sortAction;
     return new SplitCombine(value);
   }
 
-  public changeSortActionFromNormalized(sortAction: SortAction, dimensions: List<Dimension>): SplitCombine {
+  public changeSortExpressionFromNormalized(sortAction: SortExpression, dimensions: Dimensions): SplitCombine {
     if (sortAction.refName() === SplitCombine.SORT_ON_DIMENSION_PLACEHOLDER) {
-      var dimension = Dimension.getDimensionByExpression(dimensions, this.expression);
-      if (!dimension) throw new Error('can not find dimension for split');
-      sortAction = sortAction.changeExpression($(dimension.name)) as SortAction;
+      const dimension = dimensions.getDimensionByExpression(this.expression);
+      if (!dimension) throw new Error("can not find dimension for split");
+      sortAction = sortAction.changeExpression($(dimension.name)) as SortExpression;
     }
-    return this.changeSortAction(sortAction);
+    return this.changeSortExpression(sortAction);
   }
 
-  public changeLimitAction(limitAction: LimitAction): SplitCombine {
-    var value = this.valueOf();
+  public changeLimitExpression(limitAction: LimitExpression): SplitCombine {
+    const value = this.valueOf();
     value.limitAction = limitAction;
     return new SplitCombine(value);
   }
 
   public changeLimit(limit: number): SplitCombine {
-    var limitAction = limit === null ? null : new LimitAction({ limit });
-    return this.changeLimitAction(limitAction);
+    const limitAction = limit === null ? null : new LimitExpression({ value: limit });
+    return this.changeLimitExpression(limitAction);
   }
 
   public timezoneDependant(): boolean {
@@ -198,23 +211,23 @@ export class SplitCombine implements Instance<SplitCombineValue, SplitCombineJS>
     return bucketAction.needsEnvironment();
   }
 
-  public getDimension(dimensions: List<Dimension>): Dimension {
-    return Dimension.getDimensionByExpression(dimensions, this.expression);
+  public getDimension(dimensions: Dimensions): Dimension {
+    return dimensions.getDimensionByExpression(this.expression);
   }
 
-  public getTitle(dimensions: List<Dimension>): string {
-    var dimension = this.getDimension(dimensions);
-    return (dimension ? dimension.title : '?') + this.getBucketTitle();
+  public getTitle(dimensions: Dimensions): string {
+    const dimension = this.getDimension(dimensions);
+    return (dimension ? dimension.title : "?") + this.getBucketTitle();
   }
 
   public getBucketTitle(): string {
-    var bucketAction = this.bucketAction;
-    if (bucketAction instanceof TimeBucketAction) {
+    const bucketAction = this.bucketAction;
+    if (bucketAction instanceof TimeBucketExpression) {
       return ` (${bucketAction.duration.getDescription(true)})`;
-    } else if (bucketAction instanceof NumberBucketAction) {
+    } else if (bucketAction instanceof NumberBucketExpression) {
       return ` (by ${bucketAction.size})`;
     }
-    return '';
+    return "";
   }
 
 }

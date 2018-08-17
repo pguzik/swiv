@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +15,11 @@
  * limitations under the License.
  */
 
-require('./golden-center.css');
+import * as React from "react";
+import * as ReactDOM from "react-dom";
+import "./golden-center.scss";
 
-import * as React from 'react';
-import * as ReactDOM from 'react-dom';
-
-export interface GoldenCenterProps extends React.Props<any> {
+export interface GoldenCenterProps {
   topRatio?: number;
   minPadding?: number;
 }
@@ -29,13 +29,13 @@ export interface GoldenCenterState {
 }
 
 export class GoldenCenter extends React.Component<GoldenCenterProps, GoldenCenterState> {
-  static defaultProps = {
+  static defaultProps: Partial<GoldenCenterProps> = {
     topRatio: 0.618 / 1.618,
     minPadding: 50
   };
 
-  constructor() {
-    super();
+  constructor(props: GoldenCenterProps) {
+    super(props);
     this.state = {
       top: 0
     };
@@ -44,12 +44,12 @@ export class GoldenCenter extends React.Component<GoldenCenterProps, GoldenCente
   }
 
   componentDidMount() {
-    window.addEventListener('resize', this.globalResizeListener);
+    window.addEventListener("resize", this.globalResizeListener);
     this.globalResizeListener();
   }
 
   componentWillUnmount() {
-    window.removeEventListener('resize', this.globalResizeListener);
+    window.removeEventListener("resize", this.globalResizeListener);
   }
 
   globalResizeListener() {

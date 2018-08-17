@@ -1,5 +1,7 @@
 /*
+/*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +16,11 @@
  * limitations under the License.
  */
 
-import { Class, Instance, isInstanceOf } from 'immutable-class';
-import { $, Expression, RefExpression, SortAction } from 'swiv-plywood';
-import { Dimension, DimensionJS } from '../dimension/dimension';
-import { Measure, MeasureJS } from '../measure/measure';
-import { DataCube } from '../data-cube/data-cube';
+import { Class, Instance } from "immutable-class";
+import { $, Expression, RefExpression, SortExpression } from "plywood";
+import { DataCube } from "../data-cube/data-cube";
+import { Dimension, DimensionJS } from "../dimension/dimension";
+import { Measure, MeasureJS } from "../measure/measure";
 
 export interface SortOnValue {
   dimension?: Dimension;
@@ -31,10 +33,11 @@ export interface SortOnJS {
 }
 
 var check: Class<SortOnValue, SortOnJS>;
+
 export class SortOn implements Instance<SortOnValue, SortOnJS> {
 
   static isSortOn(candidate: any): candidate is SortOn {
-    return isInstanceOf(candidate, SortOn);
+    return candidate instanceof SortOn;
   }
 
   static equal(s1: SortOn, s2: SortOn): boolean {
@@ -57,7 +60,7 @@ export class SortOn implements Instance<SortOnValue, SortOnJS> {
     return new SortOn({ measure });
   }
 
-  static fromSortAction(sortAction: SortAction, dataCube: DataCube, fallbackDimension: Dimension): SortOn {
+  static fromSortExpression(sortAction: SortExpression, dataCube: DataCube, fallbackDimension: Dimension): SortOn {
     if (!sortAction) return SortOn.fromDimension(fallbackDimension);
     var sortOnName = (sortAction.expression as RefExpression).name;
     var measure = dataCube.getMeasure(sortOnName);
@@ -127,4 +130,5 @@ export class SortOn implements Instance<SortOnValue, SortOnJS> {
     return $(this.toName());
   }
 }
+
 check = SortOn;

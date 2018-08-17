@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +15,12 @@
  * limitations under the License.
  */
 
-import * as ReactDOM from 'react-dom';
-import * as TestUtils from 'react-addons-test-utils';
-import { BodyPortal } from '../../components/body-portal/body-portal';
+import * as React from "react";
+import * as ReactDOM from "react-dom";
+import * as TestUtils from "react-dom/test-utils";
+import { BodyPortal } from "../../components/body-portal/body-portal";
 
-export function findDOMNode(element: __React.Component<any, any>): Element {
-  var portal = TestUtils.scryRenderedComponentsWithType(element, BodyPortal)[0];
+export function findDOMNode(element: React.Component<any, any> | Element): Element {
+  var portal: any = TestUtils.scryRenderedComponentsWithType(element as React.Component, BodyPortal)[0];
   return portal ? portal.target.childNodes[0] : ReactDOM.findDOMNode(element);
 }

@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,29 +15,27 @@
  * limitations under the License.
  */
 
-import * as debugModule from 'debug';
-import * as http from 'http';
+import * as http from "http";
 
-import * as app from './app';
-import { START_SERVER, SERVER_SETTINGS } from './config';
+import * as app from "./app";
+import { SERVER_SETTINGS, START_SERVER } from "./config";
 
 if (START_SERVER) {
-  var debug = debugModule('swiv:www');
   var server = http.createServer(app);
 
-  server.on('error', (error: any) => {
-    if (error.syscall !== 'listen') {
+  server.on("error", (error: any) => {
+    if (error.syscall !== "listen") {
       throw error;
     }
 
     // handle specific listen errors with friendly messages
     switch (error.code) {
-      case 'EACCES':
+      case "EACCES":
         console.error(`Port ${SERVER_SETTINGS.getPort()} requires elevated privileges`);
         process.exit(1);
         break;
 
-      case 'EADDRINUSE':
+      case "EADDRINUSE":
         console.error(`Port ${SERVER_SETTINGS.getPort()} is already in use`);
         process.exit(1);
         break;
@@ -46,12 +45,11 @@ if (START_SERVER) {
     }
   });
 
-  server.on('listening', () => {
+  server.on("listening", () => {
     var address = server.address();
-    console.log(`Swiv is listening on address ${address.address} port ${address.port}`);
-    debug(`Swiv is listening on address ${address.address} port ${address.port}`);
+    console.log(`Turnilo is listening on address ${address.address} port ${address.port}`);
   });
 
-  app.set('port', SERVER_SETTINGS.getPort());
+  app.set("port", SERVER_SETTINGS.getPort());
   server.listen(SERVER_SETTINGS.getPort(), SERVER_SETTINGS.getServerHost());
 }

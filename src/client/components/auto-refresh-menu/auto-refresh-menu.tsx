@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +15,23 @@
  * limitations under the License.
  */
 
-require('./auto-refresh-menu.css');
+import { Duration, Timezone } from "chronoshift";
+import * as React from "react";
+import { DataCube, Stage, Timekeeper } from "../../../common/models/index";
+import { Fn } from "../../../common/utils/general/general";
+import { STRINGS } from "../../config/constants";
+import { BubbleMenu } from "../bubble-menu/bubble-menu";
+import { Dropdown } from "../dropdown/dropdown";
+import "./auto-refresh-menu.scss";
 
-import * as React from 'react';
-import { Duration, Timezone } from 'chronoshift';
-import { Fn } from '../../../common/utils/general/general';
-import { Stage, DataCube, Timekeeper } from '../../../common/models/index';
-import { STRINGS } from '../../config/constants';
-import { BubbleMenu } from '../bubble-menu/bubble-menu';
-import { Dropdown } from '../dropdown/dropdown';
-
-const AUTO_REFRESH_LABELS: Lookup<string> = {
-  "null": "Off",
-  "PT5S": "Every 5 seconds",
-  "PT15S": "Every 15 seconds",
-  "PT1M": "Every minute",
-  "PT5M": "Every 5 minutes",
-  "PT10M": "Every 10 minutes",
-  "PT30M": "Every 30 minutes"
+const AUTO_REFRESH_LABELS: Record<string, string> = {
+  null: "Off",
+  PT5S: "Every 5 seconds",
+  PT15S: "Every 15 seconds",
+  PT1M: "Every minute",
+  PT5M: "Every 5 minutes",
+  PT10M: "Every 10 minutes",
+  PT30M: "Every 30 minutes"
 };
 
 const REFRESH_DURATIONS: Duration[] = [
@@ -44,7 +44,7 @@ const REFRESH_DURATIONS: Duration[] = [
   Duration.fromJS("PT30M")
 ];
 
-export interface AutoRefreshMenuProps extends React.Props<any> {
+export interface AutoRefreshMenuProps {
   openOn: Element;
   onClose: Fn;
   autoRefreshRate: Duration;
@@ -60,11 +60,6 @@ export interface AutoRefreshMenuState {
 
 export class AutoRefreshMenu extends React.Component<AutoRefreshMenuProps, AutoRefreshMenuState> {
 
-  constructor() {
-    super();
-
-  }
-
   onRefreshNowClick() {
     var { refreshMaxTime } = this.props;
     refreshMaxTime();
@@ -73,13 +68,11 @@ export class AutoRefreshMenu extends React.Component<AutoRefreshMenuProps, AutoR
   renderRefreshIntervalDropdown() {
     const { autoRefreshRate, setAutoRefreshRate } = this.props;
 
-    const DurationDropdown = Dropdown.specialize<Duration>();
-
-    return <DurationDropdown
+    return <Dropdown<Duration>
       label={STRINGS.autoUpdate}
       items={REFRESH_DURATIONS}
       selectedItem={autoRefreshRate}
-      renderItem={(d) => AUTO_REFRESH_LABELS[String(d)] || `Custom ${d}`}
+      renderItem={d => AUTO_REFRESH_LABELS[String(d)] || `Custom ${d}`}
       onSelect={setAutoRefreshRate}
     />;
   }

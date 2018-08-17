@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +15,16 @@
  * limitations under the License.
  */
 
-require('./segment-action-buttons.css');
+import * as React from "react";
+import * as CopyToClipboard from "react-copy-to-clipboard";
+import { Clicker, Dimension, Stage } from "../../../common/models/index";
+import { Fn } from "../../../common/utils/general/general";
+import { STRINGS } from "../../config/constants";
+import { BubbleMenu } from "../bubble-menu/bubble-menu";
+import { Button } from "../button/button";
+import "./segment-action-buttons.scss";
 
-import * as React from 'react';
-import * as ReactDOM from 'react-dom';
-import { $, Expression, Executor, Dataset } from 'swiv-plywood';
-import { Fn } from '../../../common/utils/general/general';
-import { Stage, Clicker, Essence, DataCube, Filter, Dimension, Measure } from '../../../common/models/index';
-import { STRINGS } from '../../config/constants';
-import { BubbleMenu } from '../bubble-menu/bubble-menu';
-import { Button } from '../button/button';
-
-// I am: import { SegmentActionButtons } from '../segment-action-buttons/segment-action-buttons';
-
-export interface SegmentActionButtonsProps extends React.Props<any> {
+export interface SegmentActionButtonsProps {
   clicker: Clicker;
   dimension?: Dimension;
   segmentLabel?: string;
@@ -42,8 +39,8 @@ export interface SegmentActionButtonsState {
 
 export class SegmentActionButtons extends React.Component<SegmentActionButtonsProps, SegmentActionButtonsState> {
 
-  constructor() {
-    super();
+  constructor(props: SegmentActionButtonsProps) {
+    super(props);
     this.state = {
       moreMenuOpenOn: null
     };
@@ -94,17 +91,17 @@ export class SegmentActionButtons extends React.Component<SegmentActionButtonsPr
     var menuSize = Stage.fromSize(160, 160);
 
     const bubbleListItems = [
-      <li
-        className="clipboard"
-        key="copyValue"
-        data-clipboard-text={segmentLabel}
-        onClick={this.closeMoreMenu.bind(this)}
-      >{STRINGS.copyValue}</li>,
+      <CopyToClipboard key="copyValue" text={segmentLabel}>
+        <li
+          className="clipboard"
+          onClick={this.closeMoreMenu.bind(this)}
+        >{STRINGS.copyValue}</li>
+      </CopyToClipboard>,
       <li
         className="view-raw-data"
         key="view-raw-data"
         onClick={this.openRawDataModal.bind(this)}
-      >{STRINGS.viewRawData}</li>
+      >{STRINGS.displayRawData}</li>
     ];
 
     var url = this.getUrl();
@@ -125,7 +122,7 @@ export class SegmentActionButtons extends React.Component<SegmentActionButtonsPr
       onClose={this.closeMoreMenu.bind(this)}
     >
       <ul className="bubble-list">
-        { bubbleListItems }
+        {bubbleListItems}
       </ul>
     </BubbleMenu>;
   }
@@ -147,13 +144,13 @@ export class SegmentActionButtons extends React.Component<SegmentActionButtonsPr
         onClick={this.onCancel.bind(this)}
         title={STRINGS.cancel}
       />
-      { disableMoreMenu ? null : <Button
+      {disableMoreMenu ? null : <Button
         type="secondary"
         className="mini"
         onClick={this.onMore.bind(this)}
-        svg={require('../../icons/full-more-mini.svg')}
+        svg={require("../../icons/full-more-mini.svg")}
         active={Boolean(moreMenuOpenOn)}
-      /> }
+      />}
       {this.renderMoreMenu()}
     </div>;
   }

@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +15,17 @@
  * limitations under the License.
  */
 
-import { firstUp } from '../string/string';
-
 export class ImmutableUtils {
   public static setProperty(instance: any, path: string, newValue: any): any {
-    var bits = path.split('.');
+    var bits = path.split(".");
     var lastObject = newValue;
     var currentObject: any;
 
     var getLastObject = () => {
       let o: any = instance;
 
-      for (let i = 0; i < bits.length; i++) {
-        o = o[bits[i]];
+      for (const bit of bits) {
+        o = o[bit];
       }
 
       return o;
@@ -39,7 +38,7 @@ export class ImmutableUtils {
       if (currentObject.change instanceof Function) {
         lastObject = currentObject.change(bit, lastObject);
       } else {
-        let message = 'Can\'t find \`change()\` method on ' + currentObject.constructor.name;
+        let message = "Can't find \`change()\` method on " + currentObject.constructor.name;
         console.error(message); // Leaving this console statement because the error might be caught and obfuscated
         throw new Error(message);
       }
@@ -50,7 +49,7 @@ export class ImmutableUtils {
 
   public static getProperty(instance: any, path: string): any {
     var value = instance;
-    var bits = path.split('.');
+    var bits = path.split(".");
     var bit: string;
     while (bit = bits.shift()) value = value[bit];
 

@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +15,11 @@
  * limitations under the License.
  */
 
-require('./highlight-string.css');
+import * as React from "react";
+import { classNames } from "../../utils/dom/dom";
+import "./highlight-string.scss";
 
-import * as React from 'react';
-import { classNames } from '../../utils/dom/dom';
-
-export interface HighlightStringProps extends React.Props<any> {
+export interface HighlightStringProps {
   className?: string;
   text: string;
   highlight: string | RegExp;
@@ -29,13 +29,9 @@ export interface HighlightStringState {
 }
 
 export class HighlightString extends React.Component<HighlightStringProps, HighlightStringState> {
-  constructor() {
-    super();
-
-  }
 
   highlightInString(): any {
-    var { text, highlight} = this.props;
+    var { text, highlight } = this.props;
     if (!highlight) return text;
 
     let startIndex: number = null;
@@ -63,6 +59,6 @@ export class HighlightString extends React.Component<HighlightStringProps, Highl
   render() {
     var { className } = this.props;
 
-    return <span className={classNames('highlight-string', className)}>{this.highlightInString()}</span>;
+    return <span className={classNames("highlight-string", className)}>{this.highlightInString()}</span>;
   }
 }

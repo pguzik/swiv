@@ -3,7 +3,6 @@
     "sourceMap": true,
     "noImplicitAny": true,
     "noEmitOnError": true,
-    "declaration": true,
     "removeComments": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitReturns": true,
@@ -14,11 +13,8 @@
     "rootDir": "src",
     "outDir": "build",
     "moduleResolution": "node",
-    "jsx": "react"
-  },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "typings/**/*.d.ts"
-  ]
+    "jsx": "react",
+    "lib": ["dom", "es6", "es5"],
+    "types": ["node", "express", "mocha", "webpack-env"]
+  }
 }

@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,36 +15,34 @@
  * limitations under the License.
  */
 
-import { expect } from 'chai';
-import { testImmutableClass } from 'immutable-class-tester';
+import { testImmutableClass } from "immutable-class-tester";
 
-import { $, Expression } from 'swiv-plywood';
-import { SortOn, SortOnJS } from './sort-on';
+import { SortOn, SortOnJS } from "./sort-on";
 
-describe('SortOn', () => {
-  it('is an immutable class', () => {
+describe("SortOn", () => {
+  it("is an immutable class", () => {
     testImmutableClass<SortOnJS>(SortOn, [
 
       {
         measure: {
-          name: 'price',
-          title: 'Price',
-          formula: '$main.min($price)'
+          name: "price",
+          title: "Price",
+          formula: "$main.min($price)"
         }
       },
       {
         measure: {
-          name: 'price',
-          title: 'Price',
-          formula: '$main.sum($price)'
+          name: "price",
+          title: "Price",
+          formula: "$main.sum($price)"
         }
       },
       {
         dimension: {
-          name: 'country',
-          title: 'Country',
-          formula: '$country',
-          kind: 'string'
+          name: "country",
+          title: "Country",
+          formula: "$country",
+          kind: "string"
         }
       }
 

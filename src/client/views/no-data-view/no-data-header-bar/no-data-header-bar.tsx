@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +15,13 @@
  * limitations under the License.
  */
 
-require('./no-data-header-bar.css');
+import * as React from "react";
+import { Customization, User } from "../../../../common/models/index";
+import { Fn } from "../../../../common/utils/general/general";
+import { SvgIcon, UserMenu } from "../../../components/index";
+import "./no-data-header-bar.scss";
 
-import * as React from 'react';
-import { Fn } from '../../../../common/utils/general/general';
-import { Stage, Clicker, User, Customization } from '../../../../common/models/index';
-import { SvgIcon, UserMenu } from '../../../components/index';
-
-export interface NoDataHeaderBarProps extends React.Props<any> {
+export interface NoDataHeaderBarProps {
   user?: User;
   onNavClick: Fn;
   customization?: Customization;
@@ -33,8 +33,8 @@ export interface NoDataHeaderBarState {
 }
 
 export class NoDataHeaderBar extends React.Component<NoDataHeaderBarProps, NoDataHeaderBarState> {
-  constructor() {
-    super();
+  constructor(props: NoDataHeaderBarProps) {
+    super(props);
     this.state = {
       userMenuOpenOn: null
     };
@@ -75,7 +75,7 @@ export class NoDataHeaderBar extends React.Component<NoDataHeaderBarProps, NoDat
     var userButton: JSX.Element = null;
     if (user) {
       userButton = <div className="icon-button user" onClick={this.onUserMenuClick.bind(this)}>
-        <SvgIcon svg={require('../../../icons/full-user.svg')}/>
+        <SvgIcon svg={require("../../../icons/full-user.svg")} />
       </div>;
     }
 
@@ -89,7 +89,7 @@ export class NoDataHeaderBar extends React.Component<NoDataHeaderBarProps, NoDat
     return <header className="no-data-header-bar" style={headerStyle}>
       <div className="left-bar" onClick={onNavClick}>
         <div className="menu-icon">
-          <SvgIcon svg={require('../../../icons/menu.svg')}/>
+          <SvgIcon svg={require("../../../icons/menu.svg")} />
         </div>
         <div className="title">{title}</div>
       </div>

@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +15,20 @@
  * limitations under the License.
  */
 
-require('./checkbox.css');
+import * as React from "react";
+import { classNames } from "../../utils/dom/dom";
+import { SvgIcon } from "../svg-icon/svg-icon";
+import "./checkbox.scss";
 
-import * as React from 'react';
-import { SvgIcon } from '../svg-icon/svg-icon';
-import { classNames } from '../../utils/dom/dom';
+export type CheckboxType = "check" | "cross" | "radio";
 
-export type CheckboxType = 'check' | 'cross' | 'radio';
-
-export interface CheckboxProps extends React.Props<any> {
+export interface CheckboxProps {
   selected: boolean;
-  onClick?: React.MouseEventHandler;
+  onClick?: React.MouseEventHandler<HTMLElement>;
   type?: CheckboxType;
   color?: string;
   label?: string;
+  className?: string;
 }
 
 export interface CheckboxState {
@@ -35,35 +36,30 @@ export interface CheckboxState {
 
 export class Checkbox extends React.Component<CheckboxProps, CheckboxState> {
 
-  static defaultProps = {
-    type: 'check'
+  static defaultProps: Partial<CheckboxProps> = {
+    type: "check"
   };
-
-  constructor() {
-    super();
-
-  }
 
   renderIcon() {
     const { selected, type } = this.props;
     if (!selected) return null;
-    if (type === 'check') {
-      return <SvgIcon svg={require('../../icons/check.svg')}/>;
-    } else if (type === 'cross') {
-      return <SvgIcon svg={require('../../icons/x.svg')}/>;
+    if (type === "check") {
+      return <SvgIcon svg={require("../../icons/check.svg")} />;
+    } else if (type === "cross") {
+      return <SvgIcon svg={require("../../icons/x.svg")} />;
     }
     return null;
   }
 
   render() {
-    const { onClick, type, color, selected, label } = this.props;
+    const { onClick, type, color, selected, label, className } = this.props;
 
     var style: React.CSSProperties = null;
     if (color) {
       style = { background: color };
     }
 
-    return <div className={classNames('checkbox', type, { selected, color })} onClick={onClick}>
+    return <div className={classNames("checkbox", type, className, { selected, color })} onClick={onClick}>
       <div className="checkbox-body" style={style}></div>
       {this.renderIcon()}
       {label ? <div className="label">{label}</div> : null}

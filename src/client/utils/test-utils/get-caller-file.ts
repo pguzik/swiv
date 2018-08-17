@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,14 +16,14 @@
  */
 
 function getStack(): any[] {
-  let ErrorConstructor = <any>Error;
+  let ErrorConstructor = <any> Error;
 
   var origPrepareStackTrace = ErrorConstructor.prepareStackTrace;
 
   ErrorConstructor.prepareStackTrace = (_: any, stack: any) => stack;
 
   var err = new Error() as any;
-  var stack = err['stack'] as any[];
+  var stack = err["stack"] as any[];
   ErrorConstructor.prepareStackTrace = origPrepareStackTrace;
   stack.shift(); // getStack --> Error
 

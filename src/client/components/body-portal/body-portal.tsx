@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,25 +15,25 @@
  * limitations under the License.
  */
 
-require('./body-portal.css');
+import * as React from "react";
+import * as ReactDOM from "react-dom";
+import "./body-portal.scss";
+import normalizeStyles from "./normalize-styles";
 
-import * as React from 'react';
-import * as ReactDOM from 'react-dom';
+export interface BodyPortalProps {
 
-export interface BodyPortalProps extends React.Props<any> {
   left?: number | string;
+  right?: number | string;
   top?: number | string;
+  bottom?: number | string;
   fullSize?: boolean;
   disablePointerEvents?: boolean;
   onMount?: () => void;
   isAboveAll?: boolean;
 }
 
-export interface BodyPortalState {
-}
-
-export class BodyPortal extends React.Component<BodyPortalProps, BodyPortalState> {
-  static defaultProps = {
+export class BodyPortal extends React.Component<BodyPortalProps, {}> {
+  public static defaultProps: Partial<BodyPortalProps> = {
     disablePointerEvents: false,
     isAboveAll: false
   };
@@ -40,11 +41,7 @@ export class BodyPortal extends React.Component<BodyPortalProps, BodyPortalState
   private static aboveAll: any;
 
   private _target: any = null; // HTMLElement, a div that is appended to the body
-  private _component: React.DOMComponent<any> = null; // ReactElement, which is mounted on the target
-
-  constructor() {
-    super();
-  }
+  private _component: Element = null; // ReactElement, which is mounted on the target
 
   public get component() {
     return this._component;
@@ -52,26 +49,6 @@ export class BodyPortal extends React.Component<BodyPortalProps, BodyPortalState
 
   public get target() {
     return this._target;
-  }
-
-  updateStyle() {
-    var { left, top, disablePointerEvents, isAboveAll } = this.props;
-    var style = this._target.style;
-
-    if (typeof left === 'number') {
-      style.left = Math.round(left) + 'px';
-    } else if (typeof left === 'string') {
-      style.left = left;
-    }
-    if (typeof top === 'number') {
-      style.top = Math.round(top) + 'px';
-    } else if (typeof top === 'string') {
-      style.top = top;
-    }
-
-    style['z-index'] = 200 + (isAboveAll ? 1 : 0);
-
-    style['pointer-events'] = disablePointerEvents ? 'none' : 'auto';
   }
 
   componentDidMount() {
@@ -82,15 +59,19 @@ export class BodyPortal extends React.Component<BodyPortalProps, BodyPortalState
     if (onMount) onMount();
 
     if (isAboveAll) {
-      if (BodyPortal.aboveAll) throw new Error('There can be only one');
+      if (BodyPortal.aboveAll) throw new Error("There can be only one");
       BodyPortal.aboveAll = this;
     }
   }
 
+  updateStyle() {
+    Object.assign(this._target.style, normalizeStyles(this.props));
+  }
+
   teleport() {
-    var { fullSize } = this.props;
-    var newDiv = document.createElement('div');
-    newDiv.className = 'body-portal' + (fullSize ? ' full-size' : '');
+    const { fullSize } = this.props;
+    let newDiv = document.createElement("div");
+    newDiv.className = "body-portal" + (fullSize ? " full-size" : "");
     this._target = document.body.appendChild(newDiv);
     this.updateStyle();
     this._component = ReactDOM.render(React.Children.only(this.props.children) as any, this._target);

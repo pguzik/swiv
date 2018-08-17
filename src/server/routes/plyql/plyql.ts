@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,28 +15,28 @@
  * limitations under the License.
  */
 
-import { Router, Request, Response } from 'express';
-import { $, Expression, ChainExpression, RefExpression, External, Datum, Dataset, TimeRange, ApplyAction } from 'swiv-plywood';
-import { Timezone, WallTime, Duration } from 'chronoshift';
-
-import { SwivRequest } from '../../utils/index';
+import { Response, Router } from "express";
+import { $, Dataset, Expression, RefExpression } from "plywood";
+import { SwivRequest } from "../../utils/index";
+import { GetSettingsOptions } from "../../utils/settings-manager/settings-manager";
 
 var router = Router();
 
 interface PlyqlOutputFunctions {
   [key: string]: (data: Dataset) => string;
+
   json: (data: Dataset) => string;
   csv: (data: Dataset) => string;
   tsv: (data: Dataset) => string;
 }
 
 var outputFunctions: PlyqlOutputFunctions = {
-  json: (data: Dataset): string => { return JSON.stringify(data, null, 2); },
-  csv: (data: Dataset): string => { return data.toCSV(); },
-  tsv: (data: Dataset): string => { return data.toTSV(); }
+  json: (data: Dataset): string => JSON.stringify(data, null, 2),
+  csv: (data: Dataset): string => data.toCSV(),
+  tsv: (data: Dataset): string => data.toTSV()
 };
 
-router.post('/', (req: SwivRequest, res: Response) => {
+router.post("/", (req: SwivRequest, res: Response) => {
   var { outputType, query } = req.body;
 
   if (typeof query !== "string") {
@@ -72,19 +73,19 @@ router.post('/', (req: SwivRequest, res: Response) => {
     return;
   }
 
-  parsedQuery = parsedQuery.substitute((ex) => {
+  parsedQuery = parsedQuery.substitute(ex => {
     if (ex instanceof RefExpression && ex.name === dataCube) {
       return $("main");
     }
     return null;
   });
 
-  req.getSettings(dataCube)
-    .then((appSettings) => {
+  req.getSettings(<GetSettingsOptions> { dataCubeOfInterest: dataCube })
+    .then((appSettings: any) => {
       var myDataCube = appSettings.getDataCube(dataCube);
 
       if (!myDataCube) {
-        res.status(400).send({ error: 'unknown data cube' });
+        res.status(400).send({ error: "unknown data cube" });
         return;
       }
 

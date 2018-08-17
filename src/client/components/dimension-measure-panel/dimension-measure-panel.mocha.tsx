@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +15,19 @@
  * limitations under the License.
  */
 
-import { expect } from 'chai';
-import * as sinon from 'sinon';
-import * as React from 'react';
-import * as ReactDOM from 'react-dom';
-import * as TestUtils from 'react-addons-test-utils';
-import { $, Expression } from 'swiv-plywood';
+import { expect } from "chai";
+import * as React from "react";
+import * as ReactDOM from "react-dom";
+import * as TestUtils from "react-dom/test-utils";
 
-import { mockRequireEnsure, mockReactComponent } from '../../utils/test-utils/index';
-import { EssenceMock } from '../../../common/models/mocks';
+import { EssenceFixtures } from "../../../common/models/fixtures";
+import { mockReactComponent, renderIntoDocument } from "../../utils/test-utils";
 
-import { DimensionListTile } from '../dimension-list-tile/dimension-list-tile';
+import { DimensionListTile } from "../dimension-list-tile/dimension-list-tile";
 
-import { DimensionMeasurePanel } from './dimension-measure-panel';
+import { DimensionMeasurePanel } from "./dimension-measure-panel";
 
-describe('DimensionMeasurePanel', () => {
+describe("DimensionMeasurePanel", () => {
   before(() => {
     mockReactComponent(DimensionListTile);
   });
@@ -37,21 +36,21 @@ describe('DimensionMeasurePanel', () => {
     (DimensionListTile as any).restore();
   });
 
-  it('adds the correct class', () => {
-    var clickyMcClickFace = {toggleMultiMeasureMode: () => {}};
+  it("adds the correct class", () => {
+    var clickyMcClickFace = { toggleMultiMeasureMode: () => {} };
 
-    var renderedComponent = TestUtils.renderIntoDocument(
+    var renderedComponent = renderIntoDocument(
       <DimensionMeasurePanel
         clicker={clickyMcClickFace}
-        essence={EssenceMock.wikiTotals()}
+        essence={EssenceFixtures.wikiTotals()}
         menuStage={null}
         triggerFilterMenu={null}
         triggerSplitMenu={null}
       />
     );
 
-    expect(TestUtils.isCompositeComponent(renderedComponent), 'should be composite').to.equal(true);
-    expect((ReactDOM.findDOMNode(renderedComponent) as any).className, 'should contain class').to.contain('dimension-measure-panel');
+    expect(TestUtils.isCompositeComponent(renderedComponent), "should be composite").to.equal(true);
+    expect(ReactDOM.findDOMNode(renderedComponent).className, "should contain class").to.contain("dimension-measure-panel");
   });
 
 });

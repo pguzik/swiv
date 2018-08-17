@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,34 +15,31 @@
  * limitations under the License.
  */
 
-import { expect } from 'chai';
-import * as React from 'react';
-import * as ReactDOM from 'react-dom';
-import { Timezone } from 'chronoshift';
+import { expect } from "chai";
+import { Timezone } from "chronoshift";
+import * as React from "react";
+import * as ReactDOM from "react-dom";
+import * as TestUtils from "react-dom/test-utils";
+import { StageFixtures } from "../../../common/models/fixtures";
+import { renderIntoDocument } from "../../utils/test-utils";
+import { LineChartAxis } from "./line-chart-axis";
 
-import '../../utils/test-utils/index';
-
-import * as TestUtils from 'react-addons-test-utils';
-import { StageMock } from '../../../common/models/mocks';
-
-import { LineChartAxis } from './line-chart-axis';
-
-describe('LineChartAxis', () => {
-  it('adds the correct class', () => {
+describe("LineChartAxis", () => {
+  it("adds the correct class", () => {
     var scale = {
       tickFormat: () => {}
     };
-    var renderedComponent = TestUtils.renderIntoDocument(
+    var renderedComponent = renderIntoDocument(
       <LineChartAxis
         scale={scale}
-        stage={StageMock.defaultA()}
+        stage={StageFixtures.defaultA()}
         ticks={[]}
         timezone={Timezone.UTC}
       />
     );
 
-    expect(TestUtils.isCompositeComponent(renderedComponent), 'should be composite').to.equal(true);
-    expect((ReactDOM.findDOMNode(renderedComponent) as any).className, 'should contain class').to.contain('line-chart-axis');
+    expect(TestUtils.isCompositeComponent(renderedComponent), "should be composite").to.equal(true);
+    expect(ReactDOM.findDOMNode(renderedComponent).className, "should contain class").to.contain("line-chart-axis");
   });
 
 });

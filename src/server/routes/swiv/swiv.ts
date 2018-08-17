@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +15,18 @@
  * limitations under the License.
  */
 
-import { Router, Request, Response } from 'express';
-
-import { SwivRequest } from '../../utils/index';
-import { swivLayout } from '../../views';
-import { SETTINGS_MANAGER } from '../../config';
+import { Response, Router } from "express";
+import { SETTINGS_MANAGER } from "../../config";
+import { SwivRequest } from "../../utils";
+import { mainLayout } from "../../views";
 
 var router = Router();
 
-router.get('/', (req: SwivRequest, res: Response, next: Function) => {
+router.get("/", (req: SwivRequest, res: Response, next: Function) => {
   req.getSettings()
-    .then((appSettings) => {
+    .then(appSettings => {
       var clientSettings = appSettings.toClientSettings();
-      res.send(swivLayout({
+      res.send(mainLayout({
         version: req.version,
         title: appSettings.customization.getTitle(req.version),
         user: req.user,

@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,43 +15,49 @@
  * limitations under the License.
  */
 
-require('./date-range-input.css');
+import { Timezone } from "chronoshift";
+import "moment-timezone";
+import * as React from "react";
+import {
+  combineDateAndTimeIntoMoment,
+  getWallTimeDateOnlyString,
+  getWallTimeTimeOnlyString,
+  maybeFullyDefinedDate,
+  maybeFullyDefinedTime
+} from "../../../common/utils";
+import "./date-range-input.scss";
 
-import * as React from 'react';
-import { Timezone, WallTime } from 'chronoshift';
-import { getWallTimeString, exclusiveToInclusiveEnd } from '../../../common/utils/time/time';
-
-export interface DateRangeInputProps extends React.Props<any> {
+export interface DateRangeInputProps {
   time: Date;
   timezone: Timezone;
   onChange: (t: Date) => void;
   hide?: boolean;
   type?: string;
+  label: string;
 }
 
 export interface DateRangeInputState {
   dateString?: string;
+  timeString?: string;
 }
 
 export class DateRangeInput extends React.Component<DateRangeInputProps, DateRangeInputState> {
 
-  constructor() {
-    super();
+  constructor(props: DateRangeInputProps) {
+    super(props);
     this.state = {
-      dateString: ''
+      dateString: "",
+      timeString: ""
     };
   }
 
-  // 2015-09-23T17:42:57.636Z
-  // 2015-09-23 17:42
-
   componentDidMount() {
-    var { time, timezone } = this.props;
+    const { time, timezone } = this.props;
     this.updateStateFromTime(time, timezone);
   }
 
   componentWillReceiveProps(nextProps: DateRangeInputProps) {
-    var { time, timezone } = nextProps;
+    const { time, timezone } = nextProps;
     this.updateStateFromTime(time, timezone);
   }
 
@@ -58,57 +65,56 @@ export class DateRangeInput extends React.Component<DateRangeInputProps, DateRan
     if (!time) return;
     if (isNaN(time.valueOf())) {
       this.setState({
-        dateString: ''
+        dateString: ""
       });
       return;
     }
 
-    const effectiveTime = this.props.type === "end" ? exclusiveToInclusiveEnd(time) : time;
-
     this.setState({
-      dateString: getWallTimeString(effectiveTime, timezone)
+      dateString: getWallTimeDateOnlyString(time, timezone),
+      timeString: getWallTimeTimeOnlyString(time, timezone)
     });
   }
 
   dateChange(e: KeyboardEvent) {
-    var dateString = (e.target as HTMLInputElement).value.replace(/[^\d-]/g, '').substr(0, 10);
+    const dateString = (e.target as HTMLInputElement).value.replace(/[^\d-]/g, "");
     this.setState({
       dateString
     });
-
-    if (dateString.length === 10) {
-      this.changeDate(dateString);
+    if (maybeFullyDefinedDate(dateString)) {
+      this.changeDate(dateString, this.state.timeString);
     }
   }
 
-  changeDate(possibleDateString: string): void {
-    var { timezone, onChange, type } = this.props;
-    var possibleDate = new Date(possibleDateString);
-    // add one if end so it passes the inclusive formatting
-    var day = type === "end" ? possibleDate.getUTCDate() + 1 : possibleDate.getUTCDate();
+  timeChange(e: KeyboardEvent) {
+    const timeString = (e.target as HTMLInputElement).value.replace(/[^\d:]/g, "");
+    this.setState({
+      timeString
+    });
+    if (maybeFullyDefinedTime(timeString)) {
+      this.changeDate(this.state.dateString, timeString);
+    }
+  }
 
-    if (isNaN(possibleDate.valueOf())) {
-      onChange(null);
-    } else {
-      // Convert from WallTime to UTC
-      var possibleDate = WallTime.WallTimeToUTC(
-        timezone.toString(),
-        possibleDate.getUTCFullYear(), possibleDate.getUTCMonth(), day,
-        possibleDate.getUTCHours(), possibleDate.getUTCMinutes(), possibleDate.getUTCSeconds(),
-        possibleDate.getUTCMilliseconds()
-      ) as Date;
+  changeDate(possibleDateString: string, possibleTimeString: string): void {
+    const { timezone, onChange } = this.props;
 
-      onChange(possibleDate);
+    const possibleMoment = combineDateAndTimeIntoMoment(possibleDateString, possibleTimeString, timezone);
+    if (possibleMoment && possibleMoment.isValid()) {
+      onChange(possibleMoment.toDate());
     }
   }
 
   render() {
     const { hide } = this.props;
-    const { dateString } = this.state;
-    const value = hide ? '' : dateString;
+    const { dateString, timeString } = this.state;
+    const dateValue = hide ? "" : dateString;
+    const timeValue = hide ? "" : timeString;
 
     return <div className="date-range-input">
-      <input className="input-field" value={value} onChange={this.dateChange.bind(this)}/>
+      <div className="label">{this.props.label}</div>
+      <input placeholder="YYYY-MM-DD" className="date-field" value={dateValue} onChange={this.dateChange.bind(this)} />
+      <input placeholder="HH:MM" className="time-field" value={timeValue} onChange={this.timeChange.bind(this)} />
     </div>;
   }
 }

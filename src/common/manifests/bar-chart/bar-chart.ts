@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +15,20 @@
  * limitations under the License.
  */
 
-import { $, SortAction } from 'swiv-plywood';
-import { Splits, DataCube, SplitCombine, Colors, Dimension } from '../../models/index';
-import { Manifest, Resolve } from '../../models/manifest/manifest';
-import { CircumstancesHandler } from '../../utils/circumstances-handler/circumstances-handler';
+import { $, SortExpression } from "plywood";
+import { Dimension, SplitCombine, Splits } from "../../models";
+import { Manifest, Resolve } from "../../models/manifest/manifest";
+import { Actions } from "../../utils/rules/actions";
+import { Predicates } from "../../utils/rules/predicates";
+import { visualizationDependentEvaluatorBuilder } from "../../utils/rules/visualization-dependent-evaluator";
 
-var handler = CircumstancesHandler.EMPTY()
-  .needsAtLeastOneSplit('The Bar Chart requires at least one split')
+var rulesEvaluator = visualizationDependentEvaluatorBuilder
+  .when(Predicates.noSplits())
+  .then(Actions.manualDimensionSelection("The Bar Chart requires at least one split"))
 
-  .when(CircumstancesHandler.areExactSplitKinds('*'))
-  .or(CircumstancesHandler.areExactSplitKinds('*', '*'))
-  .then((splits: Splits, dataCube: DataCube, colors: Colors, current: boolean) => {
+  .when(Predicates.areExactSplitKinds("*"))
+  .or(Predicates.areExactSplitKinds("*", "*"))
+  .then(({ splits, dataCube, colors, isSelectedVisualization }) => {
     var continuousBoost = 0;
 
     // Auto adjustment
@@ -35,47 +39,47 @@ var handler = CircumstancesHandler.EMPTY()
       var sortStrategy = splitDimension.sortStrategy;
       if (!split.sortAction) {
         if (sortStrategy) {
-          if (sortStrategy === 'self') {
-            split = split.changeSortAction(new SortAction({
+          if (sortStrategy === "self") {
+            split = split.changeSortExpression(new SortExpression({
               expression: $(splitDimension.name),
-              direction: SortAction.DESCENDING
+              direction: SortExpression.DESCENDING
             }));
           } else {
-            split = split.changeSortAction(new SortAction({
+            split = split.changeSortExpression(new SortExpression({
               expression: $(sortStrategy),
-              direction: SortAction.DESCENDING
+              direction: SortExpression.DESCENDING
             }));
           }
-        } else if (splitDimension.kind === 'boolean') {  // Must sort boolean in deciding order!
-          split = split.changeSortAction(new SortAction({
+        } else if (splitDimension.kind === "boolean") {  // Must sort boolean in deciding order!
+          split = split.changeSortExpression(new SortExpression({
             expression: $(splitDimension.name),
-            direction: SortAction.DESCENDING
+            direction: SortExpression.DESCENDING
           }));
         } else {
           if (splitDimension.isContinuous()) {
-            split = split.changeSortAction(new SortAction({
+            split = split.changeSortExpression(new SortExpression({
               expression: $(splitDimension.name),
-              direction: SortAction.ASCENDING
+              direction: SortExpression.ASCENDING
             }));
           } else {
-            split = split.changeSortAction(dataCube.getDefaultSortAction());
+            split = split.changeSortExpression(dataCube.getDefaultSortExpression());
           }
         }
         autoChanged = true;
       } else if (splitDimension.canBucketByDefault() && split.sortAction.refName() !== splitDimension.name) {
-        split = split.changeSortAction(new SortAction({
+        split = split.changeSortExpression(new SortExpression({
           expression: $(splitDimension.name),
           direction: split.sortAction.direction
         }));
         autoChanged = true;
       }
 
-      if (splitDimension.kind === 'number') {
+      if (splitDimension.kind === "number") {
         continuousBoost = 4;
       }
 
       // ToDo: review this
-      if (!split.limitAction && (autoChanged || splitDimension.kind !== 'time')) {
+      if (!split.limitAction && (autoChanged || splitDimension.kind !== "time")) {
         split = split.changeLimit(25);
         autoChanged = true;
       }
@@ -92,31 +96,29 @@ var handler = CircumstancesHandler.EMPTY()
       return Resolve.automatic(5 + continuousBoost, { splits });
     }
 
-    return Resolve.ready(current ? 10 : (7 + continuousBoost));
+    return Resolve.ready(isSelectedVisualization ? 10 : (7 + continuousBoost));
   })
 
-  .otherwise(
-    (splits: Splits, dataCube: DataCube) => {
-      let categoricalDimensions = dataCube.dimensions.filter((d) => d.kind !== 'time');
+  .otherwise(({ splits, dataCube }) => {
+    const categoricalDimensions = dataCube.dimensions.filterDimensions(dimension => dimension.kind !== "time");
 
-      return Resolve.manual(
-        3,
-        'The Bar Chart needs one or two splits',
-        categoricalDimensions.toArray().slice(0, 2).map((dimension: Dimension) => {
-          return {
-            description: `Split on ${dimension.title} instead`,
-            adjustment: {
-              splits: Splits.fromSplitCombine(SplitCombine.fromExpression(dimension.expression))
-            }
-          };
-        })
-      );
-    }
-  );
-
+    return Resolve.manual(
+      3,
+      "The Bar Chart needs one or two splits",
+      categoricalDimensions.slice(0, 2).map((dimension: Dimension) => {
+        return {
+          description: `Split on ${dimension.title} instead`,
+          adjustment: {
+            splits: Splits.fromSplitCombine(SplitCombine.fromExpression(dimension.expression))
+          }
+        };
+      })
+    );
+  })
+  .build();
 
 export const BAR_CHART_MANIFEST = new Manifest(
-  'bar-chart',
-  'Bar Chart',
-  handler.evaluate.bind(handler)
+  "bar-chart",
+  "Bar Chart",
+  rulesEvaluator
 );

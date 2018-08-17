@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +15,14 @@
  * limitations under the License.
  */
 
-require('./vis-selector.css');
+import * as React from "react";
+import { Clicker, Essence } from "../../../common/models/index";
+import { classNames, findParentWithClass } from "../../utils/dom/dom";
+import { SvgIcon } from "../svg-icon/svg-icon";
+import { VisSelectorMenu } from "../vis-selector-menu/vis-selector-menu";
+import "./vis-selector.scss";
 
-import * as React from 'react';
-import { findParentWithClass, classNames } from '../../utils/dom/dom';
-import { SvgIcon } from '../svg-icon/svg-icon';
-import { Clicker, Essence } from '../../../common/models/index';
-import { VisSelectorMenu } from '../vis-selector-menu/vis-selector-menu';
-
-export interface VisSelectorProps extends React.Props<any> {
+export interface VisSelectorProps {
   clicker: Clicker;
   essence: Essence;
 }
@@ -33,8 +33,8 @@ export interface VisSelectorState {
 
 export class VisSelector extends React.Component<VisSelectorProps, VisSelectorState> {
 
-  constructor() {
-    super();
+  constructor(props: VisSelectorProps) {
+    super(props);
     this.state = {
       menuOpenOn: null
     };
@@ -43,7 +43,7 @@ export class VisSelector extends React.Component<VisSelectorProps, VisSelectorSt
 
   openMenu(e: MouseEvent) {
     var { menuOpenOn } = this.state;
-    var target = findParentWithClass(e.target as Element, 'vis-selector');
+    var target = findParentWithClass(e.target as Element, "vis-selector");
     if (menuOpenOn === target) {
       this.closeMenu();
       return;
@@ -74,9 +74,9 @@ export class VisSelector extends React.Component<VisSelectorProps, VisSelectorSt
       });
     }
 
-    return <div className={classNames('vis-selector', { active: menuOpenOn })} onClick={this.openMenu.bind(this)}>
+    return <div className={classNames("vis-selector", { active: menuOpenOn })} onClick={this.openMenu.bind(this)}>
       <div className="vis-item selected">
-        <SvgIcon svg={require('../../icons/vis-' + visualization.name + '.svg')}/>
+        <SvgIcon svg={require("../../icons/vis-" + visualization.name + ".svg")} />
         <div className="vis-title">{visualization.title}</div>
       </div>
       {menu}

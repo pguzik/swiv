@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,54 +15,13 @@
  * limitations under the License.
  */
 
-@import '../../imports';
-
-$total-single-width: 260px;
-$total-width: 176px;
-
 .totals {
   .total-container {
-    position: absolute;
-    top: 60px;
-    padding-bottom: 60px;
-    width: 100%; // overwritten in JS if more than one total
-  }
-
-  .total {
-    display: inline-block;
-    width: $total-width;
-    text-align: center;
-    padding: 0 10px;
-    margin-bottom: 34px;
-
-    .measure-name {
-      @include ellipsis;
-      width: 100%;
-      cursor: default;
-      font-size: 15px;
-      padding-bottom: 8px;
-      color: #999;
-      user-select: text;
-    }
-
-    .measure-value {
-      width: 100%;
-      cursor: default;
-      font-size: 30px;
-      user-select: text;
-    }
-
-    &.single {
-      width: 100%;
-
-      .measure-name {
-        font-size: 22px;
-        padding-bottom: 11px;
-      }
-
-      .measure-value {
-        font-size: 44px;
-      }
-    }
+    margin: 60px 10%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-flow: row wrap;
+    align-content: center;
   }
 }

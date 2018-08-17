@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,46 +15,47 @@
  * limitations under the License.
  */
 
-import * as filesaver from 'browser-filesaver';
-import { Dataset } from 'swiv-plywood';
+import * as filesaver from "file-saver";
+import { Dataset, DatasetJSFull, TabulatorOptions } from "plywood";
+import { DataSetWithTabOptions } from "../../views/cube-view/cube-view";
 
-export type FileFormat = "csv" | "tsv" | "json" | "txt";
+export type FileFormat = "csv" | "tsv" | "json";
 
 export function getMIMEType(fileType: string) {
   switch (fileType) {
-    case 'csv':
-      return 'text/csv';
-    case 'tsv':
-      return 'text/tsv';
+    case "csv":
+      return "text/csv";
+    case "tsv":
+      return "text/tsv";
     default:
-      return 'application/json';
+      return "application/json";
   }
 }
 
-export function download(dataset: Dataset, fileName?: string, fileFormat?: FileFormat): void {
+export function download({ dataset, options }: DataSetWithTabOptions, fileFormat: FileFormat, fileName?: string): void {
   const type = `${getMIMEType(fileFormat)};charset=utf-8`;
-  const blob = new Blob([datasetToFileString(dataset, fileFormat)], {type});
+  const blob = new Blob([datasetToFileString(dataset, fileFormat, options)], { type });
   if (!fileName) fileName = `${new Date()}-data`;
   fileName += `.${fileFormat}`;
   filesaver.saveAs(blob, fileName, true); // true == disable auto BOM
 }
 
-export function datasetToFileString(dataset: Dataset, fileFormat?: FileFormat): string {
-  if (fileFormat === 'csv') {
-    return dataset.toCSV();
-  } else if (fileFormat === 'tsv') {
-    return dataset.toTSV();
+export function datasetToFileString(dataset: Dataset, fileFormat: FileFormat, options?: TabulatorOptions): string {
+  if (fileFormat === "csv") {
+    return dataset.toCSV(options);
+  } else if (fileFormat === "tsv") {
+    return dataset.toTSV(options);
   } else {
-    return JSON.stringify(dataset.toJS(), null, 2);
+    const datasetJS = dataset.toJS() as DatasetJSFull;
+    return JSON.stringify(datasetJS.data, null, 2);
   }
 }
 
-export function makeFileName(...args: Array<string>): string {
+export function makeFileName(...args: string[]): string {
   var nameComponents: string[] = [];
-  args.forEach((arg) => {
+  args.forEach(arg => {
     if (arg) nameComponents.push(arg.toLowerCase());
   });
   var nameString = nameComponents.join("_");
   return nameString.length < 200 ? nameString : nameString.substr(0, 200);
 }
-

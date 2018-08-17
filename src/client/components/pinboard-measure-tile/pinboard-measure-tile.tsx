@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +15,12 @@
  * limitations under the License.
  */
 
-require('./pinboard-measure-tile.css');
+import * as React from "react";
+import { Dimension, Essence, SortOn } from "../../../common/models/index";
+import { Dropdown } from "../dropdown/dropdown";
+import "./pinboard-measure-tile.scss";
 
-import * as React from 'react';
-import { Stage, Essence, DataCube, Filter, Dimension, Measure, SortOn } from '../../../common/models/index';
-import { Dropdown } from '../dropdown/dropdown';
-
-export interface PinboardMeasureTileProps extends React.Props<any> {
+export interface PinboardMeasureTileProps {
   essence: Essence;
   title: string;
   dimension?: Dimension;
@@ -32,22 +32,17 @@ export interface PinboardMeasureTileState {
 }
 
 export class PinboardMeasureTile extends React.Component<PinboardMeasureTileProps, PinboardMeasureTileState> {
-  constructor() {
-    super();
-  }
 
   render() {
     var { essence, title, dimension, sortOn, onSelect } = this.props;
 
     var sortOns = (dimension ? [SortOn.fromDimension(dimension)] : []).concat(
-      essence.dataCube.measures.toArray().map(SortOn.fromMeasure)
+      essence.dataCube.measures.mapMeasures(SortOn.fromMeasure)
     );
-
-    const SortOnDropdown = Dropdown.specialize<SortOn>();
 
     return <div className="pinboard-measure-tile">
       <div className="title">{title}</div>
-      <SortOnDropdown
+      <Dropdown<SortOn>
         items={sortOns}
         selectedItem={sortOn}
         equal={SortOn.equal}

@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,71 +15,41 @@
  * limitations under the License.
  */
 
-require('./segment-bubble.css');
-
-import * as React from 'react';
-import { Timezone } from 'chronoshift';
-import { Fn } from '../../../common/utils/general/general';
-import { Stage, Clicker, Dimension } from '../../../common/models/index';
-import { clamp } from '../../utils/dom/dom';
-import { BodyPortal } from '../body-portal/body-portal';
-import { Shpitz } from '../shpitz/shpitz';
-import { SegmentActionButtons } from '../segment-action-buttons/segment-action-buttons';
+import * as React from "react";
+import { JSXNode } from "../../../common/utils";
+import { clamp } from "../../utils/dom/dom";
+import { BodyPortal } from "../body-portal/body-portal";
+import { Shpitz } from "../shpitz/shpitz";
+import "./segment-bubble.scss";
 
 const OFFSET_V = -10;
 const PER_LETTER_PIXELS = 8;
+const MIN_TITLE_WIDTH = 80;
+const MAX_TITLE_WIDTH = 300;
 
-export interface SegmentBubbleProps extends React.Props<any> {
+export interface SegmentBubbleProps {
   left: number;
   top: number;
-  dimension?: Dimension;
-  segmentLabel?: string;
-  measureLabel?: string;
-  clicker?: Clicker;
-  onClose?: Fn;
-  openRawDataModal?: Fn;
+  title: string;
+  content?: JSXNode;
+  actions?: JSX.Element;
 }
 
-export interface SegmentBubbleState {
-  moreMenuOpenOn?: Element;
+function label(title: string, content: JSXNode) {
+  const minTextWidth = clamp(title.length * PER_LETTER_PIXELS, MIN_TITLE_WIDTH, MAX_TITLE_WIDTH);
+  return <div className="text" style={{ minWidth: minTextWidth }}>
+    <div className="title">{title}</div>
+    {content ? <div className="content">{content}</div> : null}
+  </div>;
 }
 
-export class SegmentBubble extends React.Component<SegmentBubbleProps, SegmentBubbleState> {
-
-  constructor() {
-    super();
-  }
-
-  render() {
-    const { left, top, dimension, segmentLabel, measureLabel, clicker, openRawDataModal, onClose } = this.props;
-
-    var textElement: JSX.Element;
-    if (segmentLabel) {
-      var minTextWidth = clamp(segmentLabel.length * PER_LETTER_PIXELS, 80, 300);
-      textElement = <div className="text" style={{ minWidth: minTextWidth }}>
-        <div className="segment">{segmentLabel}</div>
-        {measureLabel ? <div className="measure-value">{measureLabel}</div> : null}
-      </div>;
-    }
-
-    var actionsElement: JSX.Element = null;
-
-    if (clicker) {
-      actionsElement = <SegmentActionButtons
-        clicker={clicker}
-        dimension={dimension}
-        segmentLabel={segmentLabel}
-        openRawDataModal={openRawDataModal}
-        onClose={onClose}
-      />;
-    }
-
-    return <BodyPortal left={left} top={top + OFFSET_V} disablePointerEvents={!clicker}>
-      <div className="segment-bubble" ref="bubble">
-        {textElement}
-        {actionsElement}
-        <Shpitz direction="up"/>
-      </div>
-    </BodyPortal>;
-  }
-}
+export const SegmentBubble: React.SFC<SegmentBubbleProps> = (props: SegmentBubbleProps) => {
+  const { left, top, title, content, actions } = props;
+  return <BodyPortal left={left} top={top + OFFSET_V} disablePointerEvents={!actions}>
+    <div className="segment-bubble">
+      {label(title, content)}
+      {actions}
+      <Shpitz direction="up"/>
+    </div>
+  </BodyPortal>;
+};

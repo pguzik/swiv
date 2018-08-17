@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +15,34 @@
  * limitations under the License.
  */
 
-import { TimeBucketAction, NumberBucketAction, ActionJS, Action, ActionValue, TimeRange, PlywoodRange, NumberRange } from 'swiv-plywood';
-import { day, hour, minute, Timezone, Duration } from 'chronoshift';
-
+import { day, Duration, hour, minute, Timezone } from "chronoshift";
 import {
-  hasOwnProperty, findFirstBiggerIndex, findExactIndex, findMaxValueIndex, findMinValueIndex,
-  toSignificantDigits, getNumberOfWholeDigits, findBiggerClosestToIdeal
-} from '../../../common/utils/general/general';
+  Expression,
+  ExpressionJS,
+  ExpressionValue,
+  NumberBucketExpression,
+  NumberRange,
+  PlywoodRange,
+  TimeBucketExpression,
+  TimeRange
+} from "plywood";
+import {
+  findBiggerClosestToIdeal,
+  findExactIndex,
+  findFirstBiggerIndex,
+  findMaxValueIndex,
+  findMinValueIndex,
+  getNumberOfWholeDigits,
+  hasOwnProperty,
+  toSignificantDigits
+} from "../../../common/utils/general/general";
 
 const MENU_LENGTH = 5;
 
-export type Granularity = TimeBucketAction | NumberBucketAction;
-export type GranularityJS = string | number | ActionJS;
+export type Granularity = TimeBucketExpression | NumberBucketExpression;
+export type GranularityJS = string | number | ExpressionJS;
 export type BucketUnit = Duration | number;
-export type ContinuousDimensionKind = 'time' | 'number';
+export type ContinuousDimensionKind = "time" | "number";
 
 export interface Checker {
   checkPoint: number;
@@ -73,42 +88,42 @@ function minutes(count: number) {
 }
 
 export class TimeHelper {
-  static dimensionKind: ContinuousDimensionKind = 'time';
+  static dimensionKind: ContinuousDimensionKind = "time";
 
-  static minGranularity = granularityFromJS('PT1M');
-  static defaultGranularity = granularityFromJS('P1D');
+  static minGranularity = granularityFromJS("PT1M");
+  static defaultGranularity = granularityFromJS("P1D");
 
   static supportedGranularities = function() {
     return [
-        'PT1S', 'PT1M', 'PT5M', 'PT15M',
-        'PT1H', 'PT6H', 'PT8H', 'PT12H',
-        'P1D', 'P1W', 'P1M', 'P3M', 'P6M',
-        'P1Y', 'P2Y'
-      ].map(granularityFromJS);
+      "PT1S", "PT1M", "PT5M", "PT15M",
+      "PT1H", "PT6H", "PT8H", "PT12H",
+      "P1D", "P1W", "P1M", "P3M", "P6M",
+      "P1Y", "P2Y"
+    ].map(granularityFromJS);
   };
 
   static checkers = [
-    makeCheckpoint(days(95), 'P1W'),
-    makeCheckpoint(days(8), 'P1D'),
-    makeCheckpoint(hours(8), 'PT1H'),
-    makeCheckpoint(hours(3), 'PT5M')];
+    makeCheckpoint(days(95), "P1W"),
+    makeCheckpoint(days(8), "P1D"),
+    makeCheckpoint(hours(8), "PT1H"),
+    makeCheckpoint(hours(3), "PT5M")];
 
   static coarseCheckers = [
-    makeCheckpoint(days(95), 'P1M'),
-    makeCheckpoint(days(20), 'P1W'),
-    makeCheckpoint(days(6), 'P1D'),
-    makeCheckpoint(days(2), 'PT12H'),
-    makeCheckpoint(hours(23), 'PT6H'),
-    makeCheckpoint(hours(3), 'PT1H'),
-    makeCheckpoint(minutes(30), 'PT5M')
+    makeCheckpoint(days(95), "P1M"),
+    makeCheckpoint(days(20), "P1W"),
+    makeCheckpoint(days(6), "P1D"),
+    makeCheckpoint(days(2), "PT12H"),
+    makeCheckpoint(hours(23), "PT6H"),
+    makeCheckpoint(hours(3), "PT1H"),
+    makeCheckpoint(minutes(30), "PT5M")
   ];
 
-  static defaultGranularities = TimeHelper.checkers.map((c) => { return granularityFromJS(c.returnValue); }).concat(TimeHelper.minGranularity).reverse();
-  static coarseGranularities = TimeHelper.coarseCheckers.map((c) => { return granularityFromJS(c.returnValue); }).concat(TimeHelper.minGranularity).reverse();
+  static defaultGranularities = TimeHelper.checkers.map(c => granularityFromJS(c.returnValue)).concat(TimeHelper.minGranularity).reverse();
+  static coarseGranularities = TimeHelper.coarseCheckers.map(c => granularityFromJS(c.returnValue)).concat(TimeHelper.minGranularity).reverse();
 }
 
 export class NumberHelper {
-  static dimensionKind: ContinuousDimensionKind = 'number';
+  static dimensionKind: ContinuousDimensionKind = "number";
   static minGranularity = granularityFromJS(1);
   static defaultGranularity = granularityFromJS(10);
 
@@ -120,7 +135,7 @@ export class NumberHelper {
     makeCheckpoint(0.1, 0.1)
   ];
 
-  static defaultGranularities = NumberHelper.checkers.map((c: any) => { return granularityFromJS(c.returnValue); }).reverse();
+  static defaultGranularities = NumberHelper.checkers.map((c: any) => granularityFromJS(c.returnValue)).reverse();
   static coarseGranularities: Granularity[] = null;
   static coarseCheckers: Checker[] = [
     makeCheckpoint(500000, 50000),
@@ -135,11 +150,11 @@ export class NumberHelper {
 
   static supportedGranularities = (bucketedBy: Granularity) => {
     return makeNumberBuckets(getBucketSize(bucketedBy), 10);
-  };
+  }
 }
 
 function getHelperForKind(kind: ContinuousDimensionKind) {
-  if (kind === 'time') return TimeHelper;
+  if (kind === "time") return TimeHelper;
   return NumberHelper;
 }
 
@@ -149,22 +164,22 @@ function getHelperForRange(input: PlywoodRange) {
 }
 
 function getBucketSize(input: Granularity): number {
-  if (input instanceof TimeBucketAction) return input.duration.getCanonicalLength();
-  if (input instanceof NumberBucketAction) return input.size;
+  if (input instanceof TimeBucketExpression) return input.duration.getCanonicalLength();
+  if (input instanceof NumberBucketExpression) return input.size;
   throw new Error(`unrecognized granularity: ${input} must be of type TimeBucketAction or NumberBucketAction`);
 }
 
 function getBucketUnit(input: Granularity): BucketUnit {
-  if (input instanceof TimeBucketAction) return input.duration;
-  if (input instanceof NumberBucketAction) return input.size;
+  if (input instanceof TimeBucketExpression) return input.duration;
+  if (input instanceof NumberBucketExpression) return input.size;
   throw new Error(`unrecognized granularity: ${input} must be of type TimeBucketAction or NumberBucketAction`);
 }
 
 function bucketUnitToGranularity(input: BucketUnit): Granularity {
   if (input instanceof Duration) {
-    return new TimeBucketAction({ duration: input });
+    return new TimeBucketExpression({ duration: input });
   } else if (!isNaN(input)) {
-    return new NumberBucketAction({ size: input, offset: 0 });
+    return new NumberBucketExpression({ size: input, offset: 0 });
   }
   throw new Error(`unrecognized bucket unit: ${input} must be of type number or Duration`);
 }
@@ -201,22 +216,22 @@ function generateGranularitySet(allGranularities: Granularity[], bucketedBy: Gra
 }
 
 export function granularityFromJS(input: GranularityJS): Granularity {
-  if (typeof input === 'number') return NumberBucketAction.fromJS({ size: input });
-  if (typeof input === 'string') return TimeBucketAction.fromJS({ duration: input });
+  if (typeof input === "number") return NumberBucketExpression.fromJS({ size: input });
+  if (typeof input === "string") return TimeBucketExpression.fromJS({ duration: input });
 
   if (typeof input === "object") {
-    if (!hasOwnProperty(input, 'action')) {
-      throw new Error(`could not recognize object as action`);
+    if (!hasOwnProperty(input, "op")) {
+      throw new Error("could not recognize object as expression");
     }
-    return (Action.fromJS(input as GranularityJS) as Granularity);
+    return (Expression.fromJS(input as ExpressionJS) as Granularity);
   }
-  throw new Error(`input should be of type number, string, or action`);
+  throw new Error("input should be of type number, string, or action");
 }
 
 export function granularityToString(input: Granularity): string {
-  if (input instanceof TimeBucketAction) {
+  if (input instanceof TimeBucketExpression) {
     return input.duration.toString();
-  } else if (input instanceof NumberBucketAction) {
+  } else if (input instanceof NumberBucketExpression) {
     return input.size.toString();
   }
 
@@ -225,18 +240,18 @@ export function granularityToString(input: Granularity): string {
 
 export function granularityEquals(g1: Granularity, g2: Granularity) {
   if (!Boolean(g1) === Boolean(g2)) return false;
-  if (g1 === g2 ) return true;
-  return (g1 as Action).equals(g2 as Action);
+  if (g1 === g2) return true;
+  return (g1 as Expression).equals(g2 as Expression);
 }
 
 export function granularityToJS(input: Granularity): GranularityJS {
   var js = input.toJS();
 
-  if (js.action === 'timeBucket') {
+  if (js.action === "timeBucket") {
     if (Object.keys(js).length === 2) return js.duration;
   }
 
-  if (js.action === 'numberBucket') {
+  if (js.action === "numberBucket") {
     if (Object.keys(js).length === 2) return js.size;
   }
 
@@ -244,15 +259,15 @@ export function granularityToJS(input: Granularity): GranularityJS {
 }
 
 export function updateBucketSize(existing: Granularity, newInput: Granularity): Granularity {
-  if (newInput instanceof TimeBucketAction) {
-    return new TimeBucketAction({
-      duration: (newInput as TimeBucketAction).duration,
-      timezone: (existing as TimeBucketAction).timezone
+  if (newInput instanceof TimeBucketExpression) {
+    return new TimeBucketExpression({
+      duration: (newInput as TimeBucketExpression).duration,
+      timezone: (existing as TimeBucketExpression).timezone
     });
-  } else if (newInput instanceof NumberBucketAction) {
-    var value: ActionValue = { size: (newInput as NumberBucketAction).size };
-    if ((existing as NumberBucketAction).offset) value.offset = (existing as NumberBucketAction).offset;
-    return new NumberBucketAction(value);
+  } else if (newInput instanceof NumberBucketExpression) {
+    var value: ExpressionValue = { size: (newInput as NumberBucketExpression).size };
+    if ((existing as NumberBucketExpression).offset) value.offset = (existing as NumberBucketExpression).offset;
+    return new NumberBucketExpression(value);
   }
   throw new Error(`unrecognized granularity: ${newInput} must be of type TimeBucket or NumberBucket`);
 }
@@ -268,7 +283,7 @@ export function getGranularities(kind: ContinuousDimensionKind, bucketedBy?: Gra
 
 export function getDefaultGranularityForKind(kind: ContinuousDimensionKind, bucketedBy?: Granularity, customGranularities?: Granularity[]): Granularity {
   if (bucketedBy) return bucketedBy;
-  if (customGranularities)return customGranularities[2];
+  if (customGranularities) return customGranularities[2];
   return getHelperForKind(kind).defaultGranularity;
 }
 
@@ -283,9 +298,8 @@ export function getBestBucketUnitForRange(inputRange: PlywoodRange, bigChecker: 
   var bucketLength = bucketedBy ? getBucketSize(bucketedBy) : 0;
   var checkPoints = bigChecker && rangeHelper.coarseCheckers ? rangeHelper.coarseCheckers : rangeHelper.checkers;
 
-  for (var i = 0; i < checkPoints.length; i++) {
-    var checkPoint = checkPoints[i].checkPoint;
-    var returnVal = granularityFromJS(checkPoints[i].returnValue);
+  for (const { checkPoint, returnValue } of checkPoints) {
+    var returnVal = granularityFromJS(returnValue);
     if (rangeLength > checkPoint || bucketLength > checkPoint) {
 
       if (bucketedBy) {
@@ -306,7 +320,7 @@ export function getBestBucketUnitForRange(inputRange: PlywoodRange, bigChecker: 
   return getBucketUnit(granularity);
 }
 
-export function getLineChartTicks(range: PlywoodRange, timezone: Timezone): (Date | number)[] {
+export function getLineChartTicks(range: PlywoodRange, timezone: Timezone): Array<Date | number> {
   if (range instanceof TimeRange) {
     const { start, end } = range as TimeRange;
     const tickDuration = getBestBucketUnitForRange(range as TimeRange, true) as Duration;

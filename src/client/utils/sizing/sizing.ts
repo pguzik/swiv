@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +25,7 @@ export function getVisibleSegments(segmentWidths: number[], offset: number, visi
   var shownColumns = 0;
 
   var curWidth = 0;
-  for (var i = 0; i < segmentWidths.length; i++) {
-    let segmentWidth = segmentWidths[i];
+  for (const segmentWidth of segmentWidths) {
     let afterWidth = curWidth + segmentWidth;
     if (afterWidth < offset) {
       startIndex++;

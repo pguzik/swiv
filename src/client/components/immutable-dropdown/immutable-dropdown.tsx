@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +15,19 @@
  * limitations under the License.
  */
 
-require('./immutable-dropdown.css');
+import * as React from "react";
+import { ListItem } from "../../../common/models/index";
+import { ImmutableUtils } from "../../../common/utils/index";
+import { ChangeFn } from "../../utils/immutable-form-delegate/immutable-form-delegate";
+import { Dropdown } from "../dropdown/dropdown";
+import "./immutable-dropdown.scss";
 
-import { ImmutableUtils } from '../../../common/utils/index';
-
-import * as React from 'react';
-import * as ReactDOM from 'react-dom';
-import { $, Expression, Executor, Dataset } from 'swiv-plywood';
-import { Stage, Clicker, Essence, DataCube, Filter, Dimension, Measure, ListItem } from '../../../common/models/index';
-import { ChangeFn } from '../../utils/immutable-form-delegate/immutable-form-delegate';
-import { SvgIcon } from '../svg-icon/svg-icon';
-import { Dropdown } from '../dropdown/dropdown';
-
-export interface ImmutableDropdownProps<T> extends React.Props<any> {
+export interface ImmutableDropdownProps<T> {
   instance: any;
   path: string;
   label?: string;
 
-  items: Array<T>;
+  items: T[];
   equal: (a: T, b: T) => boolean;
   renderItem: (a: T) => string;
   keyItem: (a: T) => any;
@@ -42,31 +38,19 @@ export interface ImmutableDropdownState {
 }
 
 export class ImmutableDropdown<T> extends React.Component<ImmutableDropdownProps<T>, ImmutableDropdownState> {
-  // Allows usage in TSX :
-  // const MyDropdown = ImmutableDropdown.specialize<MyImmutableClass>();
-  // then : <MyDropdown ... />
-  static specialize<U>() {
-    return ImmutableDropdown as { new (): ImmutableDropdown<U>; };
-  }
 
   static simpleGenerator(instance: any, changeFn: ChangeFn) {
     return (name: string, items: ListItem[]) => {
-      let MyDropDown = ImmutableDropdown.specialize<ListItem>();
-
-      return <MyDropDown
+      return <ImmutableDropdown<ListItem>
         items={items}
         instance={instance}
         path={name}
         equal={(a: ListItem, b: ListItem) => a.value === b.value}
-        renderItem={(a: ListItem) => a ? a.label : ''}
-        keyItem={(a: ListItem) => a.value || 'default_value'}
+        renderItem={(a: ListItem) => a ? a.label : ""}
+        keyItem={(a: ListItem) => a.value || "default_value"}
         onChange={changeFn}
       />;
     };
-  }
-
-  constructor() {
-    super();
   }
 
   onChange(newSelectedItem: T) {
@@ -82,13 +66,11 @@ export class ImmutableDropdown<T> extends React.Component<ImmutableDropdownProps
 
   render() {
     const { label, items, equal, renderItem, keyItem, instance, path } = this.props;
-    const MyDropDown = Dropdown.specialize<T>();
-
     const selectedValue = ImmutableUtils.getProperty(instance, path);
 
-    const selectedItem: T = items.filter((item) => keyItem(item) === selectedValue)[0] || items[0];
+    const selectedItem: T = items.filter(item => keyItem(item) === selectedValue)[0] || items[0];
 
-    return <MyDropDown
+    return <Dropdown<T>
       className="immutable-dropdown input"
       label={label}
       items={items}

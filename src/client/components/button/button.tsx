@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +15,15 @@
  * limitations under the License.
  */
 
-require('./button.css');
-
-import * as React from 'react';
-import { Fn } from '../../../common/utils/general/general';
-import { classNames } from '../../utils/dom/dom';
-import { SvgIcon } from '../svg-icon/svg-icon';
+import * as React from "react";
+import { Fn } from "../../../common/utils/general/general";
+import { classNames } from "../../utils/dom/dom";
+import { SvgIcon } from "../svg-icon/svg-icon";
+import "./button.scss";
 
 export type ButtonType = "primary" | "secondary" | "warn";
 
-export interface ButtonProps extends React.Props<any> {
+export interface ButtonProps {
   type: ButtonType;
   className?: string;
   title?: string;
@@ -37,20 +37,17 @@ export interface ButtonState {
 }
 
 export class Button extends React.Component<ButtonProps, ButtonState> {
-  constructor() {
-    super();
-  }
 
   render() {
     const { title, type, className, svg, active, disabled, onClick } = this.props;
 
     var icon: JSX.Element = null;
     if (svg) {
-      icon = <SvgIcon svg={svg}/>;
+      icon = <SvgIcon svg={svg} />;
     }
 
     return <button
-      className={classNames('button', type, className, { icon, active })}
+      className={classNames("button", type, className, { icon, active })}
       onClick={onClick}
       disabled={disabled}
     >

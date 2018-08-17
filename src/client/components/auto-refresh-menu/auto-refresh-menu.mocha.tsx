@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,23 +15,20 @@
  * limitations under the License.
  */
 
-import { expect } from 'chai';
-import * as React from 'react';
-import * as ReactDOM from 'react-dom';
-import * as TestUtils from 'react-addons-test-utils';
-import { findDOMNode } from '../../utils/test-utils/index';
+import { expect } from "chai";
+import * as React from "react";
+import * as TestUtils from "react-dom/test-utils";
+import { DataCubeFixtures, TimekeeperFixtures } from "../../../common/models/fixtures";
+import { findDOMNode, renderIntoDocument } from "../../utils/test-utils";
+import { AutoRefreshMenu } from "./auto-refresh-menu";
 
-import { DataCubeMock, TimekeeperMock } from '../../../common/models/mocks';
+describe("AutoRefreshMenu", () => {
+  it("adds the correct class", () => {
+    var openOn = document.createElement("div");
 
-import { AutoRefreshMenu } from './auto-refresh-menu';
+    var dataCube = DataCubeFixtures.wiki();
 
-describe('AutoRefreshMenu', () => {
-  it('adds the correct class', () => {
-    var openOn = document.createElement('div');
-
-    var dataCube = DataCubeMock.wiki();
-
-    var renderedComponent = TestUtils.renderIntoDocument(
+    var renderedComponent = renderIntoDocument(
       <AutoRefreshMenu
         onClose={null}
         openOn={openOn}
@@ -38,13 +36,13 @@ describe('AutoRefreshMenu', () => {
         setAutoRefreshRate={null}
         refreshMaxTime={null}
         dataCube={dataCube}
-        timekeeper={TimekeeperMock.fixed()}
+        timekeeper={TimekeeperFixtures.fixed()}
         timezone={dataCube.getDefaultTimezone()}
       />
     );
 
-    expect(TestUtils.isCompositeComponent(renderedComponent), 'should be composite').to.equal(true);
-    expect((findDOMNode(renderedComponent) as any).className, 'should contain class').to.contain('auto-refresh-menu');
+    expect(TestUtils.isCompositeComponent(renderedComponent), "should be composite").to.equal(true);
+    expect(findDOMNode(renderedComponent).className, "should contain class").to.contain("auto-refresh-menu");
   });
 
 });

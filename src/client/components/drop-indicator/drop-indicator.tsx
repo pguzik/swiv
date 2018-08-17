@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +15,11 @@
  * limitations under the License.
  */
 
-require('./drop-indicator.css');
+import * as React from "react";
+import { SvgIcon } from "../svg-icon/svg-icon";
+import "./drop-indicator.scss";
 
-import * as React from 'react';
-import { SvgIcon } from '../svg-icon/svg-icon';
-
-export interface DropIndicatorProps extends React.Props<any> {
+export interface DropIndicatorProps {
 }
 
 export interface DropIndicatorState {
@@ -27,16 +27,11 @@ export interface DropIndicatorState {
 
 export class DropIndicator extends React.Component<DropIndicatorProps, DropIndicatorState> {
 
-  constructor() {
-    super();
-
-  }
-
   render() {
     return <div className="drop-indicator">
       <div className="white-out"></div>
       <div className="action">
-        <SvgIcon svg={require('../../icons/split-replace.svg')}/>
+        <SvgIcon svg={require("../../icons/split-replace.svg")} />
       </div>
     </div>;
   }

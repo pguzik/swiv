@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,59 +15,62 @@
  * limitations under the License.
  */
 
-import { expect } from 'chai';
-import { testImmutableClass } from 'immutable-class-tester';
-
-import { $, Expression } from 'swiv-plywood';
-import { MANIFESTS } from "../../manifests/index";
-import { Essence, EssenceJS, VisStrategy } from './essence';
-import { DataCube, Introspection } from "../data-cube/data-cube";
-import { DataCubeMock } from "../data-cube/data-cube.mock";
-import { TOTALS_MANIFEST } from "../../manifests/totals/totals";
-import { Splits } from "../splits/splits";
-import { SplitCombineMock } from "../split-combine/split-combine.mock";
+import { expect } from "chai";
+import { testImmutableClass } from "immutable-class-tester";
+import { $, RefExpression } from "plywood";
+import { Highlight } from "..";
+import { MANIFESTS } from "../../manifests";
 import { BAR_CHART_MANIFEST } from "../../manifests/bar-chart/bar-chart";
+import { LINE_CHART_MANIFEST } from "../../manifests/line-chart/line-chart";
+import { TABLE_MANIFEST } from "../../manifests/table/table";
+import { TOTALS_MANIFEST } from "../../manifests/totals/totals";
+import { DataCube, Introspection } from "../data-cube/data-cube";
+import { DataCubeFixtures } from "../data-cube/data-cube.fixtures";
+import { HighlightFixtures } from "../highlight/highlight.fixtures";
+import { MeasureFixtures } from "../measure/measure.fixtures";
 import { SplitCombine } from "../split-combine/split-combine";
-import { RefExpression } from "swiv-plywood";
+import { Splits } from "../splits/splits";
+import { Essence, EssenceJS, VisStrategy } from "./essence";
+import { EssenceFixtures } from "./essence.fixtures";
 
-describe('Essence', () => {
+describe("Essence", () => {
   var dataCubeJS = {
-    name: 'twitter',
-    title: 'Twitter',
-    clusterName: 'druid',
-    source: 'twitter',
-    introspection: ('none' as Introspection),
+    name: "twitter",
+    title: "Twitter",
+    clusterName: "druid",
+    source: "twitter",
+    introspection: ("none" as Introspection),
     dimensions: [
       {
-        kind: 'time',
-        name: 'time',
-        title: 'Time',
-        formula: '$time'
+        kind: "time",
+        name: "time",
+        title: "Time",
+        formula: "$time"
       },
       {
-        kind: 'string',
-        name: 'twitterHandle',
-        title: 'Twitter Handle',
-        formula: '$twitterHandle'
+        kind: "string",
+        name: "twitterHandle",
+        title: "Twitter Handle",
+        formula: "$twitterHandle"
       }
     ],
     measures: [
       {
-        name: 'count',
-        title: 'count',
-        formula: '$main.count()'
+        name: "count",
+        title: "count",
+        formula: "$main.count()"
       }
     ],
-    timeAttribute: 'time',
-    defaultTimezone: 'Etc/UTC',
-    defaultFilter: { op: 'literal', value: true },
-    defaultSplits: 'time',
-    defaultDuration: 'P3D',
-    defaultSortMeasure: 'count',
-    defaultPinnedDimensions: ['twitterHandle'],
+    timeAttribute: "time",
+    defaultTimezone: "Etc/UTC",
+    defaultFilter: { op: "literal", value: true },
+    defaultSplits: "time",
+    defaultDuration: "P3D",
+    defaultSortMeasure: "count",
+    defaultPinnedDimensions: ["twitterHandle"],
     refreshRule: {
       rule: "fixed",
-      time: new Date('2015-09-13T00:00:00Z')
+      time: new Date("2015-09-13T00:00:00Z")
     }
   };
 
@@ -74,293 +78,310 @@ describe('Essence', () => {
 
   var context = { dataCube, visualizations: MANIFESTS };
 
-  it('is an immutable class', () => {
+  it("is an immutable class", () => {
     testImmutableClass<EssenceJS>(Essence, [
       {
-        visualization: 'totals',
-        timezone: 'Etc/UTC',
+        visualization: "totals",
+        timezone: "Etc/UTC",
         filter: {
           op: "literal",
           value: true
         },
         pinnedDimensions: [],
-        singleMeasure: 'count',
+        singleMeasure: "count",
         selectedMeasures: [],
         splits: []
       },
       {
-        visualization: 'totals',
-        timezone: 'Etc/UTC',
-        filter: $('twitterHandle').overlap(['A', 'B', 'C']).toJS(),
-        pinnedDimensions: ['twitterHandle'],
-        singleMeasure: 'count',
-        selectedMeasures: ['count'],
+        visualization: "totals",
+        timezone: "Etc/UTC",
+        filter: $("twitterHandle").overlap(["A", "B", "C"]).toJS(),
+        pinnedDimensions: ["twitterHandle"],
+        pinnedSort: "count",
+        singleMeasure: "count",
+        selectedMeasures: ["count"],
         splits: []
       }
     ], { context });
   });
 
+  describe("removes highlight when necessary", () => {
+    const { lineChartWithAddedMeasure, lineChartWithAvgAddedMeasure, tableNoMeasure } = HighlightFixtures;
 
-  describe('errors', () => {
-    it('must have context', () => {
+    const tests: Array<{ highlight: Highlight, expected: Highlight, description: string }> = [
+      { highlight: lineChartWithAddedMeasure(), expected: lineChartWithAddedMeasure(), description: "is kept when measure is selected" },
+      { highlight: tableNoMeasure(), expected: tableNoMeasure(), description: "is kept when contains no measure" },
+      { highlight: lineChartWithAvgAddedMeasure(), expected: null, description: "is removed when measure is not selected" }
+    ];
+
+    tests.forEach(({ highlight, expected, description }) => {
+      it(`highlight ${description}`, () => {
+        const essenceValue = EssenceFixtures.wikiTable().valueOf();
+        const essenceValueWithHighlight = { ...essenceValue, highlight };
+        const essenceWithHighlight = new Essence(essenceValueWithHighlight);
+
+        expect(essenceWithHighlight.highlight).to.deep.equal(expected);
+
+      });
+    });
+  });
+
+  describe("errors", () => {
+    it("must have context", () => {
       expect(() => {
         Essence.fromJS({} as any);
-      }).to.throw('must have context');
+      }).to.throw("must have context");
     });
 
   });
 
-
-  describe('upgrades', () => {
-    it('works in the base case', () => {
+  describe("upgrades", () => {
+    it("works in the base case", () => {
       var essence = Essence.fromJS({
-        visualization: 'totals',
-        timezone: 'Etc/UTC',
+        visualization: "totals",
+        timezone: "Etc/UTC",
         pinnedDimensions: [],
         selectedMeasures: [],
         splits: []
       }, context);
 
       expect(essence.toJS()).to.deep.equal({
-        "filter": {
-          "action": {
-            "action": "in",
-            "expression": {
-              "action": {
-                "action": "timeRange",
-                "duration": "P3D",
-                "step": -1
-              },
-              "expression": {
-                "name": "m",
-                "op": "ref"
-              },
-              "op": "chain"
+        filter: {
+          expression: {
+            op: "timeRange",
+            duration: "P3D",
+            step: -1,
+            operand: {
+              name: "m",
+              op: "ref"
             }
           },
-          "expression": {
-            "name": "time",
-            "op": "ref"
-          },
-          "op": "chain"
+          op: "overlap",
+          operand: {
+            name: "time",
+            op: "ref"
+          }
         },
-        "multiMeasureMode": true,
-        "pinnedDimensions": [],
-        "singleMeasure": "count",
-        "selectedMeasures": [],
-        "splits": [],
-        "timezone": "Etc/UTC",
-        "visualization": "totals"
+        multiMeasureMode: true,
+        pinnedDimensions: [],
+        selectedMeasures: [],
+        singleMeasure: "count",
+        splits: [],
+        timezone: "Etc/UTC",
+        visualization: "totals"
       });
     });
 
-    it('adds timezone', () => {
+    it("adds timezone", () => {
       var linkItem = Essence.fromJS({
-        visualization: 'totals',
-        pinnedDimensions: ['statusCode'],
-        selectedMeasures: ['count'],
+        visualization: "totals",
+        pinnedDimensions: ["statusCode"],
+        selectedMeasures: ["count"],
         splits: [],
-        filter: 'true'
+        filter: "true"
       }, context);
 
       expect(linkItem.toJS()).to.deep.equal({
-        "filter": {
-          "op": "literal",
-          "value": true
+        filter: {
+          op: "literal",
+          value: true
         },
-        "multiMeasureMode": true,
-        "pinnedDimensions": [],
-        "singleMeasure": "count",
-        "selectedMeasures": [
+        multiMeasureMode: true,
+        pinnedDimensions: [],
+        singleMeasure: "count",
+        selectedMeasures: [
           "count"
         ],
-        "splits": [],
-        "timezone": "Etc/UTC",
-        "visualization": "totals"
+        splits: [],
+        timezone: "Etc/UTC",
+        visualization: "totals"
       });
-    });
-
-    it('handles time series', () => {
-      var hashNoVis = "2/EQUQLgxg9AqgKgYWAGgN7APYAdgC5gA2AlmAKYBOAhgSsAG7UCupeY5zAvsgNoC6ybZsmAQMjAHZgU3EWMnB+MsAHcSZcgAlK4gCYEW/cYwIEgA=";
-
-      var timeSeriesHash = `time-series/${hashNoVis}`;
-      var lineChartHash = `line-chart/${hashNoVis}`;
-      var barChartHash = `bar-chart/${hashNoVis}`;
-
-      var timeSeries = Essence.fromHash(timeSeriesHash, context);
-      var lineChart = Essence.fromHash(lineChartHash, context);
-      var barChart = Essence.fromHash(barChartHash, context);
-
-      expect(timeSeries.visualization).to.equal(lineChart.visualization);
-      expect(timeSeries.visualization).to.not.equal(barChart.visualization);
-
     });
 
   });
 
-
-  describe('.fromDataCube', () => {
-    it('works in the base case', () => {
+  describe(".fromDataCube", () => {
+    it("works in the base case", () => {
       var essence = Essence.fromDataCube(dataCube, context);
 
       expect(essence.toJS()).to.deep.equal({
-        "filter": {
-          "action": {
-            "action": "in",
-            "expression": {
-              "action": {
-                "action": "timeRange",
-                "duration": "P3D",
-                "step": -1
-              },
-              "expression": {
-                "name": "m",
-                "op": "ref"
-              },
-              "op": "chain"
+        filter: {
+          expression: {
+            op: "timeRange",
+            duration: "P3D",
+            step: -1,
+            operand: {
+              name: "m",
+              op: "ref"
             }
           },
-          "expression": {
-            "name": "time",
-            "op": "ref"
-          },
-          "op": "chain"
+          op: "overlap",
+          operand: {
+            name: "time",
+            op: "ref"
+          }
         },
-        "pinnedDimensions": [
+        pinnedDimensions: [
           "twitterHandle"
         ],
-        "singleMeasure": "count",
-        "selectedMeasures": [
+        pinnedSort: "count",
+        singleMeasure: "count",
+        selectedMeasures: [
           "count"
         ],
-        "splits": [
+        splits: [
           {
-            "bucketAction": {
-              "action": "timeBucket",
-              "duration": "PT1H"
+            bucketAction: {
+              op: "timeBucket",
+              duration: "PT1H"
             },
-            "expression": {
-              "name": "time",
-              "op": "ref"
+            expression: {
+              name: "time",
+              op: "ref"
             },
-            "sortAction": {
-              "action": "sort",
-              "direction": "ascending",
-              "expression": {
-                "name": "time",
-                "op": "ref"
+            sortAction: {
+              op: "sort",
+              direction: "ascending",
+              expression: {
+                name: "time",
+                op: "ref"
               }
             }
           }
         ],
-        "timezone": "Etc/UTC",
-        "visualization": "line-chart"
+        timezone: "Etc/UTC",
+        visualization: "line-chart"
       });
     });
 
   });
 
-
-  describe('.toHash / #fromHash', () => {
-    it("is symmetric", () => {
-      var essence1 = Essence.fromJS({
-        visualization: 'totals',
-        timezone: 'Etc/UTC',
-        filter: {
-          op: "literal",
-          value: true
-
-        },
-        pinnedDimensions: ['twitterHandle'],
-        selectedMeasures: ['count'],
-        splits: []
-      }, context);
-
-      var hash = essence1.toHash();
-      var essence2 = Essence.fromHash(hash, context);
-
-      expect(essence1.toJS()).to.deep.equal(essence2.toJS());
-    });
-  });
-
-  describe('vis picking', () => {
+  describe("vis picking", () => {
 
     describe("#getBestVisualization", () => {
-      it("#getBestVisualization", () => {
-        var dimensions = DataCubeMock.twitter().dimensions;
-        var vis1 = Essence.getBestVisualization(MANIFESTS, DataCubeMock.twitter(), Splits.EMPTY, null, null);
-        expect(vis1.visualization.name).to.deep.equal("totals");
+      const tests = [
+        { splitDimensions: [], current: null, expected: TOTALS_MANIFEST },
+        { splitDimensions: ["tweetLength"], current: TOTALS_MANIFEST, expected: BAR_CHART_MANIFEST },
+        { splitDimensions: ["twitterHandle"], current: TOTALS_MANIFEST, expected: TABLE_MANIFEST },
+        { splitDimensions: ["time"], current: BAR_CHART_MANIFEST, expected: LINE_CHART_MANIFEST }
+      ];
+      const dimensions = DataCubeFixtures.twitter().dimensions;
 
-        var vis2 = Essence.getBestVisualization(MANIFESTS, DataCubeMock.twitter(), Splits.fromJS(['tweetLength'], { dimensions }), null, TOTALS_MANIFEST);
-        expect(vis2.visualization.name).to.deep.equal("bar-chart");
+      tests.forEach(({ splitDimensions, current, expected }) => {
+        it(`chooses ${expected.name} given splits: [${splitDimensions}] with current ${current && current.name}`, () => {
+          const { visualization } = Essence.getBestVisualization(
+            MANIFESTS,
+            DataCubeFixtures.twitter(),
+            Splits.fromJS(splitDimensions, { dimensions }),
+            null,
+            current);
 
-        var vis3 = Essence.getBestVisualization(MANIFESTS, DataCubeMock.twitter(), Splits.fromJS(['time'], { dimensions }), null, BAR_CHART_MANIFEST);
-        expect(vis3.visualization.name).to.deep.equal("line-chart");
+          expect(visualization).to.deep.equal(expected);
+        });
       });
     });
 
     describe("#changeSplits", () => {
-      var essence: Essence = null;
+      let essence: Essence = null;
+      beforeEach(() => essence = EssenceFixtures.twitterNoVisualisation());
 
-      beforeEach(() => {
-        essence = Essence.fromJS({
-          visualization: null,
-          timezone: 'Etc/UTC',
-          pinnedDimensions: [],
-          selectedMeasures: [],
-          splits: []
-        }, {
-          dataCube: DataCubeMock.twitter(),
-          visualizations: MANIFESTS
-        });
-      });
-
-
-      var timeSplit = SplitCombine.fromJS({expression: { op: 'ref', name: 'time' }});
-      var tweetLengthSplit = SplitCombine.fromJS({expression: { op: 'ref', name: 'tweetLength' }});
-      var twitterHandleSplit = SplitCombine.fromJS({expression: { op: 'ref', name: 'twitterHandle' }});
+      const timeSplit = SplitCombine.fromJS({ expression: { op: "ref", name: "time" } });
+      const tweetLengthSplit = SplitCombine.fromJS({ expression: { op: "ref", name: "tweetLength" } });
+      const twitterHandleSplit = SplitCombine.fromJS({ expression: { op: "ref", name: "twitterHandle" } });
 
       it("defaults to bar chart with numeric dimension and is sorted on self", () => {
         essence = essence.addSplit(tweetLengthSplit, VisStrategy.FairGame);
-        expect(essence.visualization.name).to.deep.equal("bar-chart");
-        expect((essence.splits.get(0).sortAction.expression as RefExpression).name).to.deep.equal('tweetLength');
-        expect(essence.visResolve.state).to.deep.equal("ready");
+        expect(essence.visualization).to.deep.equal(BAR_CHART_MANIFEST);
+        expect((essence.splits.get(0).sortAction.expression as RefExpression).name).to.deep.equal("tweetLength");
+        expect(essence.visResolve.isReady()).to.be.true;
       });
 
-      it("defaults to line chart with a time split", () => {
-        essence = essence.changeSplit(timeSplit, VisStrategy.FairGame);
-        expect(essence.visualization.name).to.deep.equal("line-chart");
-        expect(essence.visResolve.state).to.deep.equal("ready");
+      it("defaults to table with non continuous dimension", () => {
+        essence = essence.changeVisualization(TOTALS_MANIFEST);
+        essence = essence.addSplit(twitterHandleSplit, VisStrategy.FairGame);
+        expect(essence.visualization).to.deep.equal(TABLE_MANIFEST);
+        expect(essence.visResolve.isReady()).to.be.true;
       });
 
-      it("fall back with no splits", () => {
-        essence = essence.changeVisualization(BAR_CHART_MANIFEST);
-        expect(essence.visualization.name).to.deep.equal("bar-chart");
-        expect(essence.visResolve.state).to.deep.equal("manual");
+      it("defaults to line chart with a continuous dimension", () => {
+        essence = essence.changeVisualization(TOTALS_MANIFEST);
+        essence = essence.addSplit(timeSplit, VisStrategy.FairGame);
+        expect(essence.visualization).to.deep.equal(LINE_CHART_MANIFEST);
+        expect(essence.visResolve.isReady()).to.be.true;
       });
 
       it("in fair game, adding a string split to time split results in line chart", () => {
         essence = essence.addSplit(timeSplit, VisStrategy.FairGame);
         essence = essence.addSplit(twitterHandleSplit, VisStrategy.FairGame);
-        expect(essence.visualization.name).to.deep.equal("line-chart");
-        expect(essence.visResolve.state).to.deep.equal("ready");
+        expect(essence.visualization).to.deep.equal(LINE_CHART_MANIFEST);
+        expect(essence.visResolve.isReady()).to.be.true;
       });
 
-      it("gives existing vis a bonus", () => {
+      it("in unfair game, gives existing vis a bonus", () => {
         essence = essence.addSplit(timeSplit, VisStrategy.FairGame);
         essence = essence.changeVisualization(BAR_CHART_MANIFEST);
-        expect(essence.visualization.name).to.deep.equal("bar-chart");
-        expect(essence.visResolve.state).to.deep.equal("ready");
+        expect(essence.visualization).to.deep.equal(BAR_CHART_MANIFEST);
+        expect(essence.visResolve.isReady()).to.be.true;
         essence = essence.addSplit(twitterHandleSplit, VisStrategy.UnfairGame);
-        expect(essence.visualization.name).to.deep.equal("bar-chart");
-        expect(essence.visResolve.state).to.deep.equal("ready");
+        expect(essence.visualization).to.deep.equal(BAR_CHART_MANIFEST);
+        expect(essence.visResolve.isReady()).to.be.true;
+      });
 
+      it("defaults back to totals with no split", () => {
+        essence = essence.changeVisualization(TOTALS_MANIFEST);
+        essence = essence.addSplit(timeSplit, VisStrategy.FairGame);
+        expect(essence.visualization).to.deep.equal(LINE_CHART_MANIFEST);
+        expect(essence.visResolve.isReady()).to.be.true;
+
+        essence = essence.removeSplit(essence.splits.first(), VisStrategy.FairGame);
+        expect(essence.visualization).to.deep.equal(TOTALS_MANIFEST);
+        expect(essence.visResolve.isReady()).to.be.true;
+      });
+
+      const noMeasuresTests = [
+        { splits: [timeSplit], visualization: LINE_CHART_MANIFEST },
+        { splits: [tweetLengthSplit], visualization: BAR_CHART_MANIFEST },
+        { splits: [twitterHandleSplit], visualization: TABLE_MANIFEST }
+      ];
+
+      noMeasuresTests.forEach(({ splits, visualization }) => {
+        it(`does not change ${visualization.title} visualization when in manual resolve`, () => {
+          essence = essence.changeVisualization(TOTALS_MANIFEST);
+          essence = essence.addSplit(splits[0], VisStrategy.FairGame);
+          expect(essence.visualization).to.deep.equal(visualization);
+          expect(essence.visResolve.isReady()).to.be.true;
+
+          essence = essence.toggleSelectedMeasure(MeasureFixtures.twitterCount());
+          expect(essence.visualization).to.deep.equal(visualization);
+          expect(essence.visResolve.isManual()).to.be.true;
+
+          essence = essence.removeSplit(essence.splits.first(), VisStrategy.FairGame);
+          expect(essence.visualization).to.deep.equal(visualization);
+          expect(essence.visResolve.isManual()).to.be.true;
+
+          essence = essence.toggleSelectedMeasure(MeasureFixtures.twitterCount());
+          expect(essence.visualization).to.deep.equal(visualization);
+          expect(essence.visResolve.isManual()).to.be.true;
+        });
       });
 
       it("falls back when can't handle measures", () => {
         // todo
       });
-
     });
+
+    describe("#changeVisualisation", () => {
+      let essence: Essence = null;
+      beforeEach(() => essence = EssenceFixtures.twitterNoVisualisation());
+
+      [TABLE_MANIFEST, LINE_CHART_MANIFEST, BAR_CHART_MANIFEST].forEach(manifest => {
+        it("it sets visResolve to manual", () => {
+          essence = essence.changeVisualization(manifest);
+          expect(essence.visualization.name).to.deep.equal(manifest.name);
+          expect(essence.visResolve.isManual()).to.be.true;
+        });
+      });
+    });
+
   });
 });

@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,36 +15,36 @@
  * limitations under the License.
  */
 
-import { expect } from 'chai';
-import * as React from 'react';
-import * as TestUtils from 'react-addons-test-utils';
-import { EssenceMock, TimekeeperMock, DimensionMock, StageMock } from '../../../common/models/mocks';
+import { expect } from "chai";
+import * as React from "react";
+import * as TestUtils from "react-dom/test-utils";
+import { DimensionFixtures, EssenceFixtures, StageFixtures, TimekeeperFixtures } from "../../../common/models/fixtures";
 
-import { findDOMNode } from '../../utils/test-utils/index';
+import { findDOMNode, renderIntoDocument } from "../../utils/test-utils";
 
-import { NumberFilterMenu } from './number-filter-menu';
+import { NumberFilterMenu } from "./number-filter-menu";
 
-describe('NumberFilterMenu', () => {
-  var div = document.createElement('div');
+describe("NumberFilterMenu", () => {
+  var div = document.createElement("div");
   div.setAttribute("id", "Div1");
 
-  it('adds the correct class', () => {
-    var renderedComponent = TestUtils.renderIntoDocument(
+  it("adds the correct class", () => {
+    var renderedComponent = renderIntoDocument(
       <NumberFilterMenu
         clicker={null}
-        dimension={DimensionMock.time()}
-        essence={EssenceMock.wikiTotals()}
-        timekeeper={TimekeeperMock.fixed()}
+        dimension={DimensionFixtures.time()}
+        essence={EssenceFixtures.wikiTotals()}
+        timekeeper={TimekeeperFixtures.fixed()}
         onClose={null}
-        containerStage={StageMock.defaultA()}
+        containerStage={StageFixtures.defaultA()}
         openOn={div}
         inside={div}
 
       />
     );
 
-    expect(TestUtils.isCompositeComponent(renderedComponent), 'should be composite').to.equal(true);
-    expect((findDOMNode(renderedComponent) as any).className, 'should contain class').to.contain('number-filter-menu');
+    expect(TestUtils.isCompositeComponent(renderedComponent), "should be composite").to.equal(true);
+    expect(findDOMNode(renderedComponent).className, "should contain class").to.contain("number-filter-menu");
   });
 
 });

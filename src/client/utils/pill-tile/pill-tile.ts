@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +15,7 @@
  * limitations under the License.
  */
 
-import { BAR_TITLE_WIDTH, CORE_ITEM_WIDTH, CORE_ITEM_GAP, VIS_SELECTOR_WIDTH, OVERFLOW_WIDTH } from '../../config/constants';
+import { BAR_TITLE_WIDTH, CORE_ITEM_GAP, CORE_ITEM_WIDTH, OVERFLOW_WIDTH, VIS_SELECTOR_WIDTH } from "../../config/constants";
 
 export const SECTION_WIDTH = CORE_ITEM_WIDTH + CORE_ITEM_GAP;
 
@@ -25,7 +26,7 @@ function getWidthNoOverflowAdjustment(stageWidth: number) {
 export function getMaxItems(stageWidth: number, itemsLength: number): number {
   var maxWidth = getWidthNoOverflowAdjustment(stageWidth);
   var includedItems = itemsLength;
-  var initialMax = Math.floor((maxWidth - OVERFLOW_WIDTH ) / SECTION_WIDTH);
+  var initialMax = Math.floor((maxWidth - OVERFLOW_WIDTH) / SECTION_WIDTH);
 
   if (initialMax < includedItems) {
 

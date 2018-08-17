@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,34 +15,28 @@
  * limitations under the License.
  */
 
-import { expect } from 'chai';
-import * as sinon from 'sinon';
-import * as React from 'react';
-import * as ReactDOM from 'react-dom';
-import { mockRequireEnsure } from '../../utils/test-utils/index';
+import { expect } from "chai";
+import * as React from "react";
+import * as ReactDOM from "react-dom";
+import * as TestUtils from "react-dom/test-utils";
+import { EssenceFixtures } from "../../../common/models/fixtures";
+import { renderIntoDocument } from "../../utils/test-utils";
+import { DimensionListTile } from "./dimension-list-tile";
 
-import * as TestUtils from 'react-addons-test-utils';
-
-import { EssenceMock } from '../../../common/models/mocks';
-
-import { $, Expression } from 'swiv-plywood';
-
-describe('DimensionListTile', () => {
-  var { DimensionListTile } = mockRequireEnsure('./dimension-list-tile');
-
-  it('adds the correct class', () => {
-    var renderedComponent = TestUtils.renderIntoDocument(
+describe("DimensionListTile", () => {
+  it("adds the correct class", () => {
+    var renderedComponent = renderIntoDocument(
       <DimensionListTile
         clicker={null}
-        essence={EssenceMock.wikiTotals()}
+        essence={EssenceFixtures.wikiTotals()}
         menuStage={null}
         triggerFilterMenu={null}
         triggerSplitMenu={null}
       />
     );
 
-    expect(TestUtils.isCompositeComponent(renderedComponent), 'should be composite').to.equal(true);
-    expect((ReactDOM.findDOMNode(renderedComponent) as any).className, 'should contain class').to.contain('dimension-list-tile');
+    expect(TestUtils.isCompositeComponent(renderedComponent), "should be composite").to.equal(true);
+    expect(ReactDOM.findDOMNode(renderedComponent).className, "should contain class").to.contain("dimension-list-tile");
   });
 
 });

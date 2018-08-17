@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +15,13 @@
  * limitations under the License.
  */
 
-import * as React from 'react';
+import * as React from "react";
 
 export interface FormItem {
   change: (propName: string, propValue: any) => FormItem;
 }
 
-export interface ChangeFn {
-  (myInstance: any, valid: boolean, path?: string, error?: string): void;
-}
+export type ChangeFn = (myInstance: any, valid: boolean, path?: string, error?: string) => void;
 
 export interface ImmutableFormState<T> {
   newInstance?: T;
@@ -50,7 +49,7 @@ export class ImmutableFormDelegate<T> {
     return this.form.setState.call(this.form, state, callback);
   }
 
-  updateErrors(path: string, isValid: boolean, error: string): {errors: any, canSave: boolean} {
+  updateErrors(path: string, isValid: boolean, error: string): { errors: any, canSave: boolean } {
     var { errors } = this.form.state;
 
     errors[path] = isValid ? false : error;
@@ -58,7 +57,7 @@ export class ImmutableFormDelegate<T> {
     var canSave = true;
     for (let key in errors) canSave = canSave && (errors[key] === false);
 
-    return {errors, canSave};
+    return { errors, canSave };
   }
 
   onChange(newItem: any, isValid: boolean, path: string, error: string) {

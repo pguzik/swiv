@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +15,11 @@
  * limitations under the License.
  */
 
-require('./highlighter.css');
+import { PlywoodRange } from "plywood";
+import * as React from "react";
+import "./highlighter.scss";
 
-import * as React from 'react';
-import { Timezone, Duration } from 'chronoshift';
-import { PlywoodRange } from 'swiv-plywood';
-
-export interface HighlighterProps extends React.Props<any> {
+export interface HighlighterProps {
   highlightRange: PlywoodRange;
   scaleX: any;
 }
@@ -29,10 +28,6 @@ export interface HighlighterState {
 }
 
 export class Highlighter extends React.Component<HighlighterProps, HighlighterState> {
-
-  constructor() {
-    super();
-  }
 
   render() {
     const { highlightRange, scaleX } = this.props;

@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,61 +15,61 @@
  * limitations under the License.
  */
 
-import { $, SortAction } from 'swiv-plywood';
-import { Splits, DataCube, SplitCombine, Colors, Dimension } from '../../models/index';
-import { CircumstancesHandler } from '../../utils/circumstances-handler/circumstances-handler';
-import { Manifest, Resolve } from '../../models/manifest/manifest';
+import { $, SortExpression } from "plywood";
+import { Manifest, Resolve } from "../../models/manifest/manifest";
+import { Actions } from "../../utils/rules/actions";
+import { Predicates } from "../../utils/rules/predicates";
+import { visualizationDependentEvaluatorBuilder } from "../../utils/rules/visualization-dependent-evaluator";
 
-var handler = CircumstancesHandler.EMPTY()
-  .needsAtLeastOneSplit('The Table requires at least one split')
-  .otherwise(
-    (splits: Splits, dataCube: DataCube, colors: Colors, current: boolean) => {
-      var autoChanged = false;
-      splits = splits.map((split, i) => {
-        var splitDimension = splits.get(0).getDimension(dataCube.dimensions);
-        var sortStrategy = splitDimension.sortStrategy;
+var rulesEvaluator = visualizationDependentEvaluatorBuilder
+  .when(Predicates.noSplits())
+  .then(Actions.manualDimensionSelection("The Table requires at least one split"))
 
-        if (!split.sortAction) {
-          if (sortStrategy) {
-            if (sortStrategy === 'self') {
-              split = split.changeSortAction(new SortAction({
-                expression: $(splitDimension.name),
-                direction: SortAction.DESCENDING
-              }));
-            } else {
-              split = split.changeSortAction(new SortAction({
-                expression: $(sortStrategy),
-                direction: SortAction.DESCENDING
-              }));
-            }
+  .otherwise(({ splits, dataCube, colors, isSelectedVisualization }) => {
+    var autoChanged = false;
+    splits = splits.map((split, i) => {
+      var splitDimension = splits.get(0).getDimension(dataCube.dimensions);
+      var sortStrategy = splitDimension.sortStrategy;
+
+      if (!split.sortAction) {
+        if (sortStrategy) {
+          if (sortStrategy === "self") {
+            split = split.changeSortExpression(new SortExpression({
+              expression: $(splitDimension.name),
+              direction: SortExpression.DESCENDING
+            }));
           } else {
-            split = split.changeSortAction(dataCube.getDefaultSortAction());
-            autoChanged = true;
+            split = split.changeSortExpression(new SortExpression({
+              expression: $(sortStrategy),
+              direction: SortExpression.DESCENDING
+            }));
           }
-        }
-
-
-        // ToDo: review this
-        if (!split.limitAction && (autoChanged || splitDimension.kind !== 'time')) {
-          split = split.changeLimit(i ? 5 : 50);
+        } else {
+          split = split.changeSortExpression(dataCube.getDefaultSortExpression());
           autoChanged = true;
         }
+      }
 
-        return split;
-      });
-
-      if (colors) {
-        colors = null;
+      // ToDo: review this
+      if (!split.limitAction && (autoChanged || splitDimension.kind !== "time")) {
+        split = split.changeLimit(i ? 5 : 50);
         autoChanged = true;
       }
 
-      return autoChanged ? Resolve.automatic(6, { splits }) : Resolve.ready(current ? 10 : 8);
-    }
-  );
+      return split;
+    });
 
+    if (colors) {
+      colors = null;
+      autoChanged = true;
+    }
+
+    return autoChanged ? Resolve.automatic(6, { splits }) : Resolve.ready(isSelectedVisualization ? 10 : 8);
+  })
+  .build();
 
 export const TABLE_MANIFEST = new Manifest(
-  'table',
-  'Table',
-  handler.evaluate.bind(handler)
+  "table",
+  "Table",
+  rulesEvaluator
 );

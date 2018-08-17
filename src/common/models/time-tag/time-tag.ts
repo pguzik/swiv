@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +15,9 @@
  * limitations under the License.
  */
 
-import { BaseImmutable, Property, isInstanceOf } from 'immutable-class';
+import { BaseImmutable, Property, PropertyType } from "immutable-class";
 
-export type Special = 'static' | 'realtime';
+export type Special = "static" | "realtime";
 
 export interface TimeTagValue {
   name: string;
@@ -35,14 +36,14 @@ export interface TimeTagJS {
 export class TimeTag extends BaseImmutable<TimeTagValue, TimeTagJS> {
 
   static isTimeTag(candidate: any): candidate is TimeTag {
-    return isInstanceOf(candidate, TimeTag);
+    return candidate instanceof TimeTag;
   }
 
   static PROPERTIES: Property[] = [
-    { name: 'name' },
-    { name: 'time', isDate: true, defaultValue: null },
-    { name: 'updated', isDate: true, defaultValue: null },
-    { name: 'spacial', defaultValue: null }
+    { name: "name" },
+    { name: "time", type: PropertyType.DATE, defaultValue: null },
+    { name: "updated", type: PropertyType.DATE, defaultValue: null },
+    { name: "spacial", defaultValue: null }
   ];
 
   static fromJS(parameters: TimeTagJS): TimeTag {
@@ -66,4 +67,5 @@ export class TimeTag extends BaseImmutable<TimeTagValue, TimeTagJS> {
     return new TimeTag(value);
   }
 }
+
 BaseImmutable.finalize(TimeTag);

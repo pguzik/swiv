@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,27 +15,26 @@
  * limitations under the License.
  */
 
-import * as path from 'path';
-import * as Q from 'q';
-import * as fs from 'fs-promise';
-import { Dataset, Expression, PseudoDatum } from 'swiv-plywood';
-import { Logger } from 'logger-tracker';
+import * as fs from "fs-promise";
+import * as path from "path";
+import { Dataset, Expression, PseudoDatum } from "plywood";
+import * as Q from "q";
+import { Logger } from "../../../common/logger/logger";
+import { noop } from "../../../common/utils/functional/functional";
+import { parseData } from "../../../common/utils/parser/parser";
 
-import { parseData } from '../../../common/utils/parser/parser';
-
-
-export function getFileData(filePath: string): Q.Promise<any[]> {
-  return fs.readFile(filePath, 'utf-8')
-    .then((fileData) => {
+export function getFileData(filePath: string): Promise<any[]> {
+  return fs.readFile(filePath, "utf-8")
+    .then(fileData => {
       try {
         return parseData(fileData, path.extname(filePath));
       } catch (e) {
         throw new Error(`could not parse '${filePath}': ${e.message}`);
       }
     })
-    .then((fileJSON) => {
+    .then(fileJSON => {
       fileJSON.forEach((d: PseudoDatum) => {
-        d['time'] = new Date(d['time']);
+        d["time"] = new Date(d["time"]);
       });
       return fileJSON;
     });
@@ -48,8 +48,6 @@ export interface FileManagerOptions {
   subsetExpression?: Expression;
   onDatasetChange?: (dataset: Dataset) => void;
 }
-
-function noop() {}
 
 export class FileManager {
   public logger: Logger;
@@ -77,23 +75,23 @@ export class FileManager {
     var filePath = path.resolve(anchorPath, uri);
 
     logger.log(`Loading file ${filePath}`);
-    return getFileData(filePath)
+    return Q(getFileData(filePath)
       .then(
-        (rawData) => {
+        rawData => {
           logger.log(`Loaded file ${filePath} (rows = ${rawData.length})`);
           var dataset = Dataset.fromJS(rawData).hide();
 
           if (this.subsetExpression) {
-            dataset = dataset.filter(this.subsetExpression.getFn(), {});
+            dataset = dataset.filter(this.subsetExpression);
           }
 
           this.dataset = dataset;
           this.onDatasetChange(dataset);
         },
-        (e) => {
+        e => {
           logger.error(`Failed to load file ${filePath} because: ${e.message}`);
         }
-      );
+      ));
   }
 
   public destroy(): void {

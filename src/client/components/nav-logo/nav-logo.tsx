@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +15,15 @@
  * limitations under the License.
  */
 
-require('./nav-logo.css');
+import * as React from "react";
+import { SvgIcon } from "../svg-icon/svg-icon";
+import "./nav-logo.scss";
 
-import * as React from 'react';
-import * as ReactDOM from 'react-dom';
-import { $, Expression, Executor, Dataset } from 'swiv-plywood';
-import { Stage, Clicker, Essence, DataCube, Filter, Dimension, Measure } from '../../../common/models/index';
-import { SvgIcon } from '../svg-icon/svg-icon';
+const closeIcon = require("../../icons/full-remove-small.svg");
+const defaultLogo = require("../../icons/turnilo-logo.svg");
 
-export interface NavLogoProps extends React.Props<any> {
-  onClick?: React.MouseEventHandler;
+export interface NavLogoProps {
+  onClose?: React.MouseEventHandler<HTMLElement>;
   customLogoSvg?: string;
 }
 
@@ -32,18 +32,16 @@ export interface NavLogoState {
 
 export class NavLogo extends React.Component<NavLogoProps, NavLogoState> {
 
-  constructor() {
-    super();
-
-  }
-
   render() {
-    const { onClick, customLogoSvg } = this.props;
-    const svg = customLogoSvg || require('../../icons/swiv-logo.svg');
+    const { onClose, customLogoSvg } = this.props;
+    const svg = customLogoSvg || defaultLogo;
 
-    return <div className="nav-logo" onClick={onClick}>
+    return <div className="nav-logo">
       <div className="logo">
         <SvgIcon svg={svg}/>
+      </div>
+      <div className="close-icon" onClick={onClose}>
+        <SvgIcon svg={closeIcon}/>
       </div>
     </div>;
   }

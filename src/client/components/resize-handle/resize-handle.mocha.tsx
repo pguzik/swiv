@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +15,17 @@
  * limitations under the License.
  */
 
-import { expect } from 'chai';
-import * as sinon from 'sinon';
-import * as React from 'react';
-import * as TestUtils from 'react-addons-test-utils';
-import { $, Expression } from 'swiv-plywood';
+import { expect } from "chai";
+import * as React from "react";
+import * as TestUtils from "react-dom/test-utils";
 
-import { DataCubeMock, EssenceMock } from '../../../common/models/mocks';
+import { findDOMNode, renderIntoDocument } from "../../utils/test-utils";
 
-import { findDOMNode } from '../../utils/test-utils/index';
+import { ResizeHandle } from "./resize-handle";
 
-import { ResizeHandle } from './resize-handle';
-
-describe('ResizeHandle', () => {
-  it('adds the correct class', () => {
-    var renderedComponent = TestUtils.renderIntoDocument(
+describe("ResizeHandle", () => {
+  it("adds the correct class", () => {
+    var renderedComponent = renderIntoDocument(
       <ResizeHandle
         side="left"
         min={240}
@@ -37,8 +34,8 @@ describe('ResizeHandle', () => {
       />
     );
 
-    expect(TestUtils.isCompositeComponent(renderedComponent), 'should be composite').to.equal(true);
-    expect((findDOMNode(renderedComponent) as any).className, 'should contain class').to.contain('resize-handle');
+    expect(TestUtils.isCompositeComponent(renderedComponent), "should be composite").to.equal(true);
+    expect(findDOMNode(renderedComponent).className, "should contain class").to.contain("resize-handle");
   });
 
 });

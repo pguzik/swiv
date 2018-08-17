@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +15,36 @@
  * limitations under the License.
  */
 
-import { Class, Instance, isInstanceOf } from 'immutable-class';
-import { Timezone, Duration, minute, day } from 'chronoshift';
-import { $, r, Expression, ExpressionJS, LiteralExpression, RefExpression, Set, SetJS,
-  ChainExpression, NotAction, OverlapAction, InAction, Range, TimeRange, Datum, NumberRange, MatchAction, ContainsAction } from 'swiv-plywood';
+import { day, minute, Timezone } from "chronoshift";
+import { Class, Instance } from "immutable-class";
+import {
+  ChainableExpression,
+  ContainsExpression,
+  Datum,
+  Expression,
+  ExpressionJS,
+  InExpression,
+  LiteralExpression,
+  MatchExpression,
+  NotExpression,
+  NumberRange,
+  OverlapExpression,
+  r,
+  Range,
+  RefExpression,
+  Set,
+  TimeRange
+} from "plywood";
 
 // Basically these represent
 // expression.in(selection) .not()?
 export type FilterSelection = Expression | string;
-export type SupportedAction = 'overlap' | 'contains' | 'match';
+
+export enum SupportedAction {
+  overlap = "overlap",
+  contains = "contains",
+  match = "match"
+}
 
 export interface FilterClauseValue {
   action?: SupportedAction;
@@ -44,9 +66,9 @@ function isLiteral(ex: Expression): boolean {
 }
 
 function isRelative(ex: Expression): boolean {
-  if (ex instanceof ChainExpression) {
-    if (ex.type !== 'TIME_RANGE') return false;
-    var expression = ex.expression;
+  if (ex instanceof ChainableExpression) {
+    if (ex.type !== "TIME_RANGE") return false;
+    const expression = ex.getHeadOperand();
     if (expression instanceof RefExpression) {
       return expression.name === FilterClause.NOW_REF_NAME || expression.name === FilterClause.MAX_TIME_REF_NAME;
     }
@@ -59,40 +81,49 @@ function selectionsEqual(a: any, b: any) {
   if (a === b) return true;
   if (!a !== !b) return false;
   if (typeof a !== typeof b) return false;
-  if (typeof a === 'string' && typeof b === 'string') return a === b;
+  if (typeof a === "string" && typeof b === "string") return a === b;
   return (a as Expression).equals(b as Expression);
 }
 
-var check: Class<FilterClauseValue, FilterClauseJS>;
+let check: Class<FilterClauseValue, FilterClauseJS>;
+
 export class FilterClause implements Instance<FilterClauseValue, FilterClauseJS> {
 
   static isFilterClause(candidate: any): candidate is FilterClause {
-    return isInstanceOf(candidate, FilterClause);
+    return candidate instanceof FilterClause;
   }
 
-  static NOW_REF_NAME = 'n';
-  static MAX_TIME_REF_NAME = 'm';
+  static NOW_REF_NAME = "n";
+  static MAX_TIME_REF_NAME = "m";
 
   static evaluate(selection: Expression, now: Date, maxTime: Date, timezone: Timezone): TimeRange {
     if (!selection) return null;
-    var maxTimeMinuteTop = minute.shift(minute.floor(maxTime || now, timezone), timezone, 1);
-    var datum: Datum = {};
+    const maxTimeMinuteTop = minute.shift(minute.floor(maxTime || now, timezone), timezone, 1);
+    const datum: Datum = {};
     datum[FilterClause.NOW_REF_NAME] = now;
     datum[FilterClause.MAX_TIME_REF_NAME] = maxTimeMinuteTop;
-    return selection.defineEnvironment({ timezone }).getFn()(datum, {});
+    return selection.defineEnvironment({ timezone }).getFn()(datum);
   }
 
   static fromExpression(ex: Expression): FilterClause {
-    var exclude = false;
-    if (ex.lastAction() instanceof NotAction) {
-      ex = ex.popAction();
+    let exclude = false;
+
+    if (ex instanceof NotExpression) {
+      ex = ex.operand;
       exclude = true;
     }
-    var lastAction = ex.lastAction();
-    var dimExpression = ex.popAction();
-    if (lastAction instanceof InAction || lastAction instanceof OverlapAction || lastAction instanceof ContainsAction) {
-      var selection = lastAction.expression;
-      var action = lastAction.action as SupportedAction;
+
+    let dimension = "";
+    if (ex instanceof ChainableExpression) {
+      if (ex.operand instanceof RefExpression) {
+        dimension = ex.operand.name;
+      }
+    }
+
+    if (ex instanceof InExpression || ex instanceof OverlapExpression || ex instanceof ContainsExpression) {
+      let dimExpression = ex.operand;
+      const selection = ex.expression;
+      const action = ex.op as SupportedAction;
 
       return new FilterClause({
         action,
@@ -102,10 +133,11 @@ export class FilterClause implements Instance<FilterClauseValue, FilterClauseJS>
       });
     }
 
-    if (lastAction instanceof MatchAction) {
-      var regexp = (lastAction as MatchAction).regexp;
+    if (ex instanceof MatchExpression) {
+      let dimExpression = ex.operand;
+      const regexp = (ex as MatchExpression).regexp;
       return new FilterClause({
-        action: 'match',
+        action: SupportedAction.match,
         expression: dimExpression,
         selection: regexp,
         exclude
@@ -117,7 +149,7 @@ export class FilterClause implements Instance<FilterClauseValue, FilterClauseJS>
 
   static fromJS(parameters: FilterClauseJS): FilterClause {
     const { selection, action } = parameters;
-    var value: FilterClauseValue = {
+    const value: FilterClauseValue = {
       action,
       expression: Expression.fromJS(parameters.expression),
       selection: (typeof selection !== "string") ? Expression.fromJS(selection as ExpressionJS) : selection as string,
@@ -125,7 +157,6 @@ export class FilterClause implements Instance<FilterClauseValue, FilterClauseJS>
     };
     return new FilterClause(value);
   }
-
 
   public action: SupportedAction;
   public expression: Expression;
@@ -141,9 +172,9 @@ export class FilterClause implements Instance<FilterClauseValue, FilterClauseJS>
       this.relative = true;
     } else if (isLiteral(selection as Expression)) {
       this.relative = false;
-    } else if (action === 'match' && typeof selection !== 'string') {
+    } else if (action === "match" && typeof selection !== "string") {
       throw new Error(`invalid match selection: ${selection}`);
-    } else if (action === 'contains' && !(selection instanceof Expression)) {
+    } else if (action === "contains" && !(selection instanceof Expression)) {
       throw new Error(`invalid contains expression: ${selection}`);
     }
     this.selection = selection;
@@ -161,7 +192,7 @@ export class FilterClause implements Instance<FilterClauseValue, FilterClauseJS>
 
   public toJS(): FilterClauseJS {
     const { selection, action } = this;
-    var js: FilterClauseJS = {
+    const js: FilterClauseJS = {
       expression: this.expression.toJS(),
       selection: selection instanceof Expression ? (selection as Expression).toJS() : selection
     };
@@ -186,19 +217,19 @@ export class FilterClause implements Instance<FilterClauseValue, FilterClauseJS>
       this.exclude === other.exclude;
   }
 
-  public toExpression(): ChainExpression {
+  public toExpression(): ChainableExpression {
     const { expression, selection, action } = this;
-    var ex: ChainExpression = null;
+    let ex: ChainableExpression = null;
     if (selection instanceof Expression) {
-      var selectionType = (selection as Expression).type;
-      if (selectionType === 'TIME_RANGE' || selectionType === 'SET/TIME_RANGE' || selectionType === 'NUMBER_RANGE' || selectionType === 'SET/NUMBER_RANGE') {
+      const selectionType = (selection as Expression).type;
+      if (selectionType === "TIME_RANGE" || selectionType === "SET/TIME_RANGE" || selectionType === "NUMBER_RANGE" || selectionType === "SET/NUMBER_RANGE") {
         ex = expression.in(selection);
-      } else if (action === 'contains') {
+      } else if (action === "contains") {
         ex = expression.contains(selection);
       } else {
         ex = expression.overlap(selection);
       }
-    } else if (action === 'match') {
+    } else if (action === "match") {
       ex = expression.match(selection);
     }
     if (this.exclude) ex = ex.not();
@@ -210,7 +241,7 @@ export class FilterClause implements Instance<FilterClauseValue, FilterClauseJS>
     const { selection } = this;
     if (this.relative) return null;
     if (selection instanceof Expression) {
-      var v = (selection as Expression).getLiteralValue();
+      const v = (selection as Expression).getLiteralValue();
       return Set.isSet(v) ? v : Set.fromJS([v]);
     } else {
       return Set.fromJS([selection]);
@@ -218,24 +249,24 @@ export class FilterClause implements Instance<FilterClauseValue, FilterClauseJS>
   }
 
   public getExtent(): Range<any> {
-    var mySet = this.getLiteralSet();
+    const mySet = this.getLiteralSet();
     return mySet ? mySet.extent() : null;
   }
 
   public isLessThanFullDay(): boolean {
-    var extent = this.getExtent();
+    let extent = this.getExtent();
     if (!extent) return false;
     return extent.end.valueOf() - extent.start.valueOf() < day.canonicalLength;
   }
 
   public changeSelection(selection: Expression) {
-    var value = this.valueOf();
+    const value = this.valueOf();
     value.selection = selection;
     return new FilterClause(value);
   }
 
   public changeExclude(exclude: boolean): FilterClause {
-    var value = this.valueOf();
+    const value = this.valueOf();
     value.exclude = exclude;
     return new FilterClause(value);
   }
@@ -245,4 +276,5 @@ export class FilterClause implements Instance<FilterClauseValue, FilterClauseJS>
     return this.changeSelection(r(FilterClause.evaluate((this.selection as Expression), now, maxTime, timezone)));
   }
 }
+
 check = FilterClause;

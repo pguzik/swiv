@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,25 +15,24 @@
  * limitations under the License.
  */
 
-import { find } from 'swiv-plywood';
-import { Manifest } from '../../common/models/manifest/manifest';
-import { BaseVisualization } from './base-visualization/base-visualization';
+import { SimpleArray } from "immutable-class";
+import { Manifest } from "../../common/models/manifest/manifest";
 
-import { Totals } from './totals/totals';
-import { Table } from './table/table';
-import { LineChart } from './line-chart/line-chart';
-import { BarChart } from './bar-chart/bar-chart';
-import { Geo } from './geo/geo';
+import { BarChart } from "./bar-chart/bar-chart";
+import { BaseVisualization } from "./base-visualization/base-visualization";
+import { LineChart } from "./line-chart/line-chart";
+import { Table } from "./table/table";
+import { Totals } from "./totals/totals";
 
-const VIS_COMPONENTS: Array<typeof BaseVisualization> = [
+// TODO, back to: const VIS_COMPONENTS: Array<typeof BaseVisualization> = [
+const VIS_COMPONENTS: any[] = [
   Totals,
   Table,
   LineChart,
-  BarChart,
-  Geo
+  BarChart
 ];
 
 export function getVisualizationComponent(manifest: Manifest): typeof BaseVisualization {
   var manifestName = manifest.name;
-  return find(VIS_COMPONENTS, (v) => (v as any).id === manifestName);
+  return SimpleArray.find(VIS_COMPONENTS, v => (v as any).id === manifestName);
 }

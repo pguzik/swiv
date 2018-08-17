@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,27 +15,37 @@
  * limitations under the License.
  */
 
-import { List } from 'immutable';
-import { Class, Instance, isInstanceOf, immutableArraysEqual } from 'immutable-class';
-import { $, Expression } from 'swiv-plywood';
-import { verifyUrlSafeName, makeTitle } from '../../utils/general/general';
-import { Granularity, GranularityJS, granularityFromJS, granularityToJS, granularityEquals } from "../granularity/granularity";
+import { Class, immutableArraysEqual, Instance } from "immutable-class";
+import { $, Expression } from "plywood";
+import { makeTitle, verifyUrlSafeName } from "../../utils/general/general";
+import { Granularity, granularityEquals, granularityFromJS, GranularityJS, granularityToJS } from "../granularity/granularity";
+import { DimensionOrGroupVisitor } from "./dimension-group";
 
 var geoName = /continent|country|city|region/i;
+
 function isGeo(name: string): boolean {
   return geoName.test(name);
 }
 
 function typeToKind(type: string): string {
   if (!type) return type;
-  return type.toLowerCase().replace(/_/g, '-').replace(/-range$/, '');
+  return type.toLowerCase().replace(/_/g, "-").replace(/-range$/, "");
 }
 
-export type BucketingStrategy = 'defaultBucket' | 'defaultNoBucket';
+export enum BucketingStrategy {
+  defaultBucket = "defaultBucket",
+  defaultNoBucket = "defaultNoBucket"
+}
+
+const bucketingStrategies: { [strategy in BucketingStrategy]: BucketingStrategy } = {
+  defaultBucket: BucketingStrategy.defaultBucket,
+  defaultNoBucket: BucketingStrategy.defaultNoBucket
+};
 
 export interface DimensionValue {
   name: string;
   title?: string;
+  description?: string;
   formula?: string;
   kind?: string;
   url?: string;
@@ -47,6 +58,7 @@ export interface DimensionValue {
 export interface DimensionJS {
   name: string;
   title?: string;
+  description?: string;
   formula?: string;
   kind?: string;
   url?: string;
@@ -57,53 +69,35 @@ export interface DimensionJS {
 }
 
 var check: Class<DimensionValue, DimensionJS>;
+
 export class Dimension implements Instance<DimensionValue, DimensionJS> {
-  static defaultBucket: BucketingStrategy = 'defaultBucket';
-  static defaultNoBucket: BucketingStrategy = 'defaultNoBucket';
-
   static isDimension(candidate: any): candidate is Dimension {
-    return isInstanceOf(candidate, Dimension);
-  }
-
-  static getDimension(dimensions: List<Dimension>, dimensionName: string): Dimension {
-    if (!dimensionName) return null;
-    dimensionName = dimensionName.toLowerCase(); // Case insensitive
-    return dimensions.find(dimension => dimension.name.toLowerCase() === dimensionName);
-  }
-
-  static getDimensionByExpression(dimensions: List<Dimension>, expression: Expression): Dimension {
-    return dimensions.find(dimension => dimension.expression.equals(expression));
+    return candidate instanceof Dimension;
   }
 
   static fromJS(parameters: DimensionJS): Dimension {
-    var parameterExpression = (parameters as any).expression; // Back compat
-    var value: DimensionValue = {
+    const parameterExpression = (parameters as any).expression; // Back compat
+
+    const value: DimensionValue = {
       name: parameters.name,
       title: parameters.title,
-      formula: parameters.formula || (typeof parameterExpression === 'string' ? parameterExpression : null),
+      description: parameters.description,
+      formula: parameters.formula || (typeof parameterExpression === "string" ? parameterExpression : null),
       kind: parameters.kind || typeToKind((parameters as any).type),
       url: parameters.url
     };
-    var granularities = parameters.granularities;
-    if (granularities) {
-      value.granularities = granularities.map(granularityFromJS);
-    }
 
-    var bucketedBy = parameters.bucketedBy;
-    if (bucketedBy) {
-      value.bucketedBy = granularityFromJS(bucketedBy);
+    if (parameters.granularities) {
+      value.granularities = parameters.granularities.map(granularityFromJS);
     }
-
-    var bucketingStrategy = parameters.bucketingStrategy;
-    if (bucketingStrategy) {
-      if (bucketingStrategy === 'defaultNoBucket') bucketingStrategy = Dimension.defaultNoBucket;
-      if (bucketingStrategy === 'defaultBucket') bucketingStrategy = Dimension.defaultBucket;
-      value.bucketingStrategy = bucketingStrategy;
+    if (parameters.bucketedBy) {
+      value.bucketedBy = granularityFromJS(parameters.bucketedBy);
     }
-
-    var sortStrategy = parameters.sortStrategy;
-    if (sortStrategy) {
-      value.sortStrategy = sortStrategy;
+    if (parameters.bucketingStrategy) {
+      value.bucketingStrategy = bucketingStrategies[parameters.bucketingStrategy];
+    }
+    if (parameters.sortStrategy) {
+      value.sortStrategy = parameters.sortStrategy;
     }
 
     return new Dimension(value);
@@ -111,6 +105,7 @@ export class Dimension implements Instance<DimensionValue, DimensionJS> {
 
   public name: string;
   public title: string;
+  public description?: string;
   public formula: string;
   public expression: Expression;
   public kind: string;
@@ -120,27 +115,29 @@ export class Dimension implements Instance<DimensionValue, DimensionJS> {
   public bucketedBy: Granularity;
   public bucketingStrategy: BucketingStrategy;
   public sortStrategy: string;
+  public type = "dimension";
 
   constructor(parameters: DimensionValue) {
     var name = parameters.name;
     verifyUrlSafeName(name);
     this.name = name;
     this.title = parameters.title || makeTitle(name);
+    this.description = parameters.description;
 
     var formula = parameters.formula || $(name).toString();
     this.formula = formula;
     this.expression = Expression.parse(formula);
 
-    var kind = parameters.kind || typeToKind(this.expression.type) || 'string';
+    var kind = parameters.kind || typeToKind(this.expression.type) || "string";
     this.kind = kind;
 
-    if (kind === 'string' && isGeo(name)) {
-      this.className = 'string-geo';
+    if (kind === "string" && isGeo(name)) {
+      this.className = "string-geo";
     } else {
       this.className = kind;
     }
     if (parameters.url) {
-      if (typeof parameters.url !== 'string') {
+      if (typeof parameters.url !== "string") {
         throw new Error(`unsupported url: ${parameters.url}: only strings are supported`);
       }
       this.url = parameters.url;
@@ -152,9 +149,9 @@ export class Dimension implements Instance<DimensionValue, DimensionJS> {
         throw new Error(`must have list of 5 granularities in dimension '${parameters.name}'`);
       }
       var runningActionType: string = null;
-      this.granularities = granularities.map((g) => {
-        if (runningActionType === null) runningActionType = g.action;
-        if (g.action !== runningActionType) throw new Error("granularities must have the same type of actions");
+      this.granularities = granularities.map(g => {
+        if (runningActionType === null) runningActionType = g.op;
+        if (g.op !== runningActionType) throw new Error("granularities must have the same type of actions");
         return g;
       });
     }
@@ -163,11 +160,16 @@ export class Dimension implements Instance<DimensionValue, DimensionJS> {
     if (parameters.sortStrategy) this.sortStrategy = parameters.sortStrategy;
   }
 
+  accept<R>(visitor: DimensionOrGroupVisitor<R>): R {
+    return visitor.visitDimension(this);
+  }
+
   public valueOf(): DimensionValue {
     return {
       name: this.name,
       title: this.title,
       formula: this.formula,
+      description: this.description,
       kind: this.kind,
       url: this.url,
       granularities: this.granularities,
@@ -184,8 +186,9 @@ export class Dimension implements Instance<DimensionValue, DimensionJS> {
       formula: this.formula,
       kind: this.kind
     };
+    if (this.description) js.description = this.description;
     if (this.url) js.url = this.url;
-    if (this.granularities) js.granularities = this.granularities.map((g) => { return granularityToJS(g); });
+    if (this.granularities) js.granularities = this.granularities.map(g => granularityToJS(g));
     if (this.bucketedBy) js.bucketedBy = granularityToJS(this.bucketedBy);
     if (this.bucketingStrategy) js.bucketingStrategy = this.bucketingStrategy;
     if (this.sortStrategy) js.sortStrategy = this.sortStrategy;
@@ -200,10 +203,11 @@ export class Dimension implements Instance<DimensionValue, DimensionJS> {
     return `[Dimension: ${this.name}]`;
   }
 
-  public equals(other: Dimension): boolean {
+  public equals(other: any): boolean {
     return Dimension.isDimension(other) &&
       this.name === other.name &&
       this.title === other.title &&
+      this.description === other.description &&
       this.formula === other.formula &&
       this.kind === other.kind &&
       this.url === other.url &&
@@ -214,12 +218,12 @@ export class Dimension implements Instance<DimensionValue, DimensionJS> {
   }
 
   public canBucketByDefault(): boolean {
-    return this.isContinuous() && this.bucketingStrategy !== Dimension.defaultNoBucket;
+    return this.isContinuous() && this.bucketingStrategy !== BucketingStrategy.defaultNoBucket;
   }
 
   public isContinuous() {
     const { kind } = this;
-    return kind === 'time' || kind === 'number';
+    return kind === "time" || kind === "number";
   }
 
   change(propertyName: string, newValue: any): Dimension {
@@ -234,20 +238,21 @@ export class Dimension implements Instance<DimensionValue, DimensionJS> {
   }
 
   changeKind(newKind: string): Dimension {
-    return this.change('kind', newKind);
+    return this.change("kind", newKind);
   }
 
   changeName(newName: string): Dimension {
-    return this.change('name', newName);
+    return this.change("name", newName);
   }
 
   changeTitle(newTitle: string): Dimension {
-    return this.change('title', newTitle);
+    return this.change("title", newTitle);
   }
 
   public changeFormula(newFormula: string): Dimension {
-    return this.change('formula', newFormula);
+    return this.change("formula", newFormula);
   }
 
 }
+
 check = Dimension;

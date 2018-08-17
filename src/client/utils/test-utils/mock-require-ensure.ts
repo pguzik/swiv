@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +15,10 @@
  * limitations under the License.
  */
 
-import { resolve, dirname } from 'path';
-import { getCallerFile } from './get-caller-file';
-import * as rewire from 'rewire';
+import { dirname, resolve } from "path";
+import { getCallerFile } from "./get-caller-file";
+
+const rewire = require("rewire");
 
 export function mockRequireEnsure(path: string): any {
   // Gets the absolute path based on the caller's path
@@ -24,7 +26,7 @@ export function mockRequireEnsure(path: string): any {
 
   let mod = rewire(path);
 
-  let mockedRequire = mod.__get__('require');
+  let mockedRequire = mod.__get__("require");
   mockedRequire.ensure = (path: any, callback: any) => callback(mockedRequire);
 
   return mod;

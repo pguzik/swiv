@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +15,15 @@
  * limitations under the License.
  */
 
-require('./searchable-tile.css');
-
-import * as React from 'react';
-import * as ReactDOM from 'react-dom';
-import { Stage, Granularity, granularityEquals, granularityToString } from '../../../common/models/index';
-import { Fn } from '../../../common/utils/general/general';
-import { formatGranularity } from '../../../common/utils/time/time';
-import { isInside, escapeKey, classNames } from '../../utils/dom/dom';
-
-import { TileHeader, TileHeaderIcon } from '../tile-header/tile-header';
-import { ClearableInput } from '../clearable-input/clearable-input';
-import { BubbleMenu } from '../bubble-menu/bubble-menu';
+import * as React from "react";
+import * as ReactDOM from "react-dom";
+import { Stage } from "../../../common/models/index";
+import { Fn } from "../../../common/utils/general/general";
+import { classNames, escapeKey, isInside } from "../../utils/dom/dom";
+import { BubbleMenu } from "../bubble-menu/bubble-menu";
+import { ClearableInput } from "../clearable-input/clearable-input";
+import { TileHeader, TileHeaderIcon } from "../tile-header/tile-header";
+import "./searchable-tile.scss";
 
 export interface TileAction {
   selected: boolean;
@@ -34,14 +32,14 @@ export interface TileAction {
   displayValue?: string;
 }
 
-export interface SearchableTileProps extends React.Props<any> {
+export interface SearchableTileProps {
   toggleChangeFn: Fn;
   onSearchChange: (text: string) => void;
   searchText: string;
   showSearch: boolean;
   icons: TileHeaderIcon[];
   className?: string;
-  style: Lookup<any>;
+  style: Record<string, any>;
   title: string;
   onDragStart?: Fn;
   actions?: TileAction[];
@@ -55,8 +53,8 @@ export interface SearchableTileState {
 export class SearchableTile extends React.Component<SearchableTileProps, SearchableTileState> {
   public mounted: boolean;
 
-  constructor() {
-    super();
+  constructor(props: SearchableTileProps) {
+    super(props);
     this.state = {
       actionsMenuOpenOn: null
     };
@@ -67,31 +65,31 @@ export class SearchableTile extends React.Component<SearchableTileProps, Searcha
 
   componentDidMount() {
     this.mounted = true;
-    this.setState({ actionsMenuAlignOn: ReactDOM.findDOMNode(this.refs['header']) });
-    window.addEventListener('mousedown', this.globalMouseDownListener);
-    window.addEventListener('keydown', this.globalKeyDownListener);
+    this.setState({ actionsMenuAlignOn: ReactDOM.findDOMNode(this.refs["header"]) });
+    window.addEventListener("mousedown", this.globalMouseDownListener);
+    window.addEventListener("keydown", this.globalKeyDownListener);
   }
 
   componentWillUnmount() {
     this.mounted = false;
-    window.removeEventListener('mousedown', this.globalMouseDownListener);
-    window.removeEventListener('keydown', this.globalKeyDownListener);
+    window.removeEventListener("mousedown", this.globalMouseDownListener);
+    window.removeEventListener("keydown", this.globalKeyDownListener);
   }
 
   globalMouseDownListener(e: MouseEvent) {
     var { searchText, toggleChangeFn } = this.props;
 
     // Remove search if it looses focus while empty
-    if (searchText !== '') return;
+    if (searchText !== "") return;
 
     var target = e.target as Element;
 
-    var searchBoxElement = ReactDOM.findDOMNode(this.refs['search-box']);
+    var searchBoxElement = ReactDOM.findDOMNode(this.refs["search-box"]);
     if (!searchBoxElement || isInside(target, searchBoxElement)) return;
 
-    var headerRef = this.refs['header'];
-    if (!headerRef) return;
-    var searchButtonElement = ReactDOM.findDOMNode(headerRef.refs['search']);
+    var headerRef = this.refs["header"];
+    if (!headerRef || headerRef instanceof Element) return;
+    var searchButtonElement = ReactDOM.findDOMNode(headerRef.refs["search"]);
     if (!searchButtonElement || isInside(target, searchButtonElement)) return;
 
     toggleChangeFn();
@@ -130,7 +128,7 @@ export class SearchableTile extends React.Component<SearchableTileProps, Searcha
 
     return actions.map((action: TileAction) => {
       return <li
-        className={classNames({selected: action.selected })}
+        className={classNames({ selected: action.selected })}
         key={action.keyString || action.toString()}
         onClick={this.onSelectGranularity.bind(this, action)}
       >
@@ -159,23 +157,23 @@ export class SearchableTile extends React.Component<SearchableTileProps, Searcha
     </BubbleMenu>;
   }
 
-
   render() {
-    const { className, style, icons, title, onSearchChange, showSearch, searchText,
-      children, onDragStart, actions } = this.props;
+    const {
+      className, style, icons, title, onSearchChange, showSearch, searchText,
+      children, onDragStart, actions
+    } = this.props;
     const { actionsMenuOpenOn } = this.state;
     var tileIcons = icons;
 
     if (actions && actions.length > 0) {
       tileIcons = [({
-        name: 'more',
-        ref: 'more',
+        name: "more",
+        ref: "more",
         onClick: this.onActionsMenuClick.bind(this),
-        svg: require('../../icons/full-more.svg'),
+        svg: require("../../icons/full-more.svg"),
         active: Boolean(actionsMenuOpenOn)
       } as TileHeaderIcon)].concat(icons);
     }
-
 
     var qualifiedClassName = "searchable-tile " + className;
     const header = <TileHeader
@@ -197,13 +195,13 @@ export class SearchableTile extends React.Component<SearchableTileProps, Searcha
       </div>;
     }
 
-    qualifiedClassName = classNames(qualifiedClassName, (showSearch ? 'has-search' : 'no-search'));
+    qualifiedClassName = classNames(qualifiedClassName, (showSearch ? "has-search" : "no-search"));
 
     return <div className={qualifiedClassName} style={style}>
-      { header }
-      { searchBar }
-      { actionsMenuOpenOn ? this.renderActionsMenu() : null}
-      { children }
+      {header}
+      {searchBar}
+      {actionsMenuOpenOn ? this.renderActionsMenu() : null}
+      {children}
     </div>;
   }
 }

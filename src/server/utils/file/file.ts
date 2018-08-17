@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +15,14 @@
  * limitations under the License.
  */
 
-import * as fs from 'fs';
-import * as yaml from 'js-yaml';
+import * as fs from "fs";
+import * as yaml from "js-yaml";
 
 export function loadFileSync(filepath: string, postProcess: string = null): any {
-  var fileData = fs.readFileSync(filepath, 'utf-8');
-  if (postProcess === 'json') {
+  var fileData = fs.readFileSync(filepath, "utf-8");
+  if (postProcess === "json") {
     fileData = JSON.parse(fileData);
-  } else if (postProcess === 'yaml') {
+  } else if (postProcess === "yaml") {
     fileData = yaml.safeLoad(fileData);
   }
 

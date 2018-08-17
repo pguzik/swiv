@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,23 +15,18 @@
  * limitations under the License.
  */
 
-require('./raw-data-modal.css');
-
-import * as React from 'react';
-import * as ReactDOM from 'react-dom';
-import { List } from 'immutable';
-import { isDate } from 'chronoshift';
-import { $, Dataset, PlywoodValue, Datum, AttributeInfo } from 'swiv-plywood';
-import { Essence, Stage, DataCube, Timekeeper } from '../../../common/models/index';
-
-import { Fn, makeTitle, arraySum } from '../../../common/utils/general/general';
-import { download, makeFileName } from '../../utils/download/download';
-import { formatFilterClause } from '../../../common/utils/formatter/formatter';
-import { classNames } from '../../utils/dom/dom';
-import { getVisibleSegments } from '../../utils/sizing/sizing';
-import { STRINGS } from '../../config/constants';
-
-import { Modal, Button, Scroller, ScrollerLayout, Loader, QueryError } from '../../components/index';
+import { isDate } from "chronoshift";
+import { List } from "immutable";
+import { $, AttributeInfo, Dataset, Datum, Expression } from "plywood";
+import * as React from "react";
+import { DataCube, Essence, Stage, Timekeeper } from "../../../common/models";
+import { arraySum, Fn, formatFilterClause, makeTitle } from "../../../common/utils";
+import { Button, Loader, Modal, QueryError, Scroller, ScrollerLayout } from "../../components";
+import { exportOptions, STRINGS } from "../../config/constants";
+import { classNames } from "../../utils/dom/dom";
+import { download, makeFileName } from "../../utils/download/download";
+import { getVisibleSegments } from "../../utils/sizing/sizing";
+import "./raw-data-modal.scss";
 
 const HEADER_HEIGHT = 30;
 const ROW_HEIGHT = 30;
@@ -40,7 +36,7 @@ const BOOLEAN_COL_WIDTH = 100;
 const NUMBER_COL_WIDTH = 100;
 const DEFAULT_COL_WIDTH = 200;
 
-export interface RawDataModalProps extends React.Props<any> {
+export interface RawDataModalProps {
   onClose: Fn;
   essence: Essence;
   timekeeper: Timekeeper;
@@ -57,11 +53,11 @@ export interface RawDataModalState {
 
 function getColumnWidth(attribute: AttributeInfo): number {
   switch (attribute.type) {
-    case 'BOOLEAN':
+    case "BOOLEAN":
       return BOOLEAN_COL_WIDTH;
-    case 'NUMBER':
+    case "NUMBER":
       return NUMBER_COL_WIDTH;
-    case 'TIME':
+    case "TIME":
       return TIME_COL_WIDTH;
     default:
       return DEFAULT_COL_WIDTH;
@@ -70,7 +66,7 @@ function getColumnWidth(attribute: AttributeInfo): number {
 
 function classFromAttribute(attribute: AttributeInfo): string {
   return classNames(
-    String(attribute.type).toLowerCase().replace(/\//g, '-'),
+    String(attribute.type).toLowerCase().replace(/\//g, "-"),
     { unsplitable: attribute.unsplitable }
   );
 }
@@ -78,8 +74,8 @@ function classFromAttribute(attribute: AttributeInfo): string {
 export class RawDataModal extends React.Component<RawDataModalProps, RawDataModalState> {
   public mounted: boolean;
 
-  constructor() {
-    super();
+  constructor(props: RawDataModalProps) {
+    super(props);
     this.state = {
       loading: false,
       dataset: null,
@@ -89,14 +85,12 @@ export class RawDataModal extends React.Component<RawDataModalProps, RawDataModa
       stage: null
     };
 
-    this.globalResizeListener = this.globalResizeListener.bind(this);
   }
 
   componentDidMount() {
     this.mounted = true;
     const { essence, timekeeper } = this.props;
     this.fetchData(essence, timekeeper);
-    this.globalResizeListener();
   }
 
   componentWillUnmount() {
@@ -105,7 +99,7 @@ export class RawDataModal extends React.Component<RawDataModalProps, RawDataModa
 
   fetchData(essence: Essence, timekeeper: Timekeeper): void {
     const { dataCube } = essence;
-    const $main = $('main');
+    const $main = $("main");
     const query = $main.filter(essence.getEffectiveFilter(timekeeper).toExpression()).limit(LIMIT);
     this.setState({ loading: true });
     dataCube.executor(query, { timezone: essence.timezone })
@@ -127,35 +121,33 @@ export class RawDataModal extends React.Component<RawDataModalProps, RawDataModa
       );
   }
 
-  globalResizeListener() {
-    var { table } = this.refs;
-    var tableDOM = ReactDOM.findDOMNode(table);
-    if (!tableDOM) return;
-    this.setState({
-      stage: Stage.fromClientRect(tableDOM.getBoundingClientRect())
-    });
+  onScrollerViewportUpdate(viewPortStage: Stage) {
+    if (!viewPortStage.equals(this.state.stage)) {
+      this.setState({
+        stage: viewPortStage
+      });
+    }
   }
 
   onScroll(scrollTop: number, scrollLeft: number) {
-    this.setState({scrollLeft, scrollTop});
+    this.setState({ scrollLeft, scrollTop });
   }
 
   getStringifiedFilters(): List<string> {
     const { essence, timekeeper } = this.props;
     const { dataCube } = essence;
 
-    return essence.getEffectiveFilter(timekeeper).clauses.map((clause, i) => {
+    return essence.getEffectiveFilter(timekeeper).clauses.map(clause => {
       const dimension = dataCube.getDimensionByExpression(clause.expression);
       if (!dimension) return null;
-      var evaluatedClause = dimension.kind === 'time' ? essence.evaluateClause(clause, timekeeper) : clause;
-      return formatFilterClause(dimension, evaluatedClause, essence.timezone);
+      return formatFilterClause(dimension, clause, essence.timezone);
     }).toList();
   }
 
   getSortedAttributes(dataCube: DataCube): AttributeInfo[] {
     const timeAttributeName = dataCube.timeAttribute ? dataCube.timeAttribute.name : null;
 
-    var attributeRank = (attribute: AttributeInfo) => {
+    const attributeRank = (attribute: AttributeInfo) => {
       const name = attribute.name;
       if (name === timeAttributeName) {
         return 1;
@@ -197,10 +189,9 @@ export class RawDataModal extends React.Component<RawDataModalProps, RawDataModa
       const name = attribute.name;
       const width = getColumnWidth(attribute);
       const style = { width };
-      const key = name;
       return (<div className={classNames("header-cell", classFromAttribute(attribute))} style={style} key={i}>
         <div className="title-wrap">
-          {makeTitle(key)}
+          {makeTitle(name)}
         </div>
       </div>);
     });
@@ -223,23 +214,24 @@ export class RawDataModal extends React.Component<RawDataModalProps, RawDataModa
 
     const rawData = dataset.data;
 
-    const [ firstRowToShow, lastRowToShow ] = this.getVisibleIndices(rawData.length, stage.height);
+    const [firstRowToShow, lastRowToShow] = this.getVisibleIndices(rawData.length, stage.height);
 
     const rows = rawData.slice(firstRowToShow, lastRowToShow);
-    var attributes = this.getSortedAttributes(dataCube);
-    var attributeWidths = attributes.map(getColumnWidth);
+    let attributes = this.getSortedAttributes(dataCube);
+    const attributeWidths = attributes.map(getColumnWidth);
 
     const { startIndex, shownColumns } = getVisibleSegments(attributeWidths, scrollLeft, stage.width);
-    var leftOffset = arraySum(attributeWidths.slice(0, startIndex));
+    const leftOffset = arraySum(attributeWidths.slice(0, startIndex));
 
     attributes = attributes.slice(startIndex, startIndex + shownColumns);
 
-    var rowY = firstRowToShow * ROW_HEIGHT;
+    let rowY = firstRowToShow * ROW_HEIGHT;
     return rows.map((datum: Datum, i: number) => {
-      var cols: JSX.Element[] = [];
+      const cols: JSX.Element[] = [];
       attributes.forEach((attribute: AttributeInfo) => {
         const name = attribute.name;
-        const value: PlywoodValue = datum[name];
+        const datumAttribute = datum[name];
+        const value = (datumAttribute instanceof Expression) ? datumAttribute.resolve(datum).simplify() : datum[name];
         const colStyle = {
           width: getColumnWidth(attribute)
         };
@@ -250,7 +242,7 @@ export class RawDataModal extends React.Component<RawDataModalProps, RawDataModa
           displayValue = (datum[name] as Date).toISOString();
         }
 
-        cols.push(<div className={classNames('cell', classFromAttribute(attribute))} key={name} style={colStyle}>
+        cols.push(<div className={classNames("cell", classFromAttribute(attribute))} key={name} style={colStyle}>
           <span className="cell-value">{String(displayValue)}</span>
         </div>);
       });
@@ -261,14 +253,40 @@ export class RawDataModal extends React.Component<RawDataModalProps, RawDataModa
     });
   }
 
-  render() {
-    const { essence, timekeeper, onClose } = this.props;
+  renderButtons(): JSX.Element {
+    const { essence, onClose, timekeeper } = this.props;
     const { dataset, loading, error } = this.state;
     const { dataCube } = essence;
 
-    const title = `${makeTitle(STRINGS.segment)} ${STRINGS.rawData}`;
-
     const filtersString = essence.getEffectiveFilter(timekeeper).getFileString(dataCube.timeAttribute);
+
+    const buttons: JSX.Element[] = [];
+
+    buttons.push(<Button type="primary" className="close" onClick={onClose} title={STRINGS.close} />);
+
+    exportOptions.forEach(({ label, fileFormat }) => {
+      buttons.push(
+        <Button
+          type="secondary"
+          className="download"
+          onClick={download.bind(this, dataset, makeFileName(dataCube.name, filtersString, "raw"), fileFormat)}
+          title={label}
+          disabled={Boolean(loading || error)}
+        />
+      );
+    });
+
+    return <div className="button-bar">
+      {buttons}
+    </div>;
+  }
+
+  render() {
+    const { essence, onClose } = this.props;
+    const { dataset, loading, error, stage } = this.state;
+    const { dataCube } = essence;
+
+    const title = `${makeTitle(STRINGS.rawData)}`;
 
     const scrollerLayout: ScrollerLayout = {
       // Inner dimensions
@@ -293,23 +311,14 @@ export class RawDataModal extends React.Component<RawDataModalProps, RawDataModa
           ref="table"
           layout={scrollerLayout}
           topGutter={this.renderHeader()}
-          body={this.renderRows()}
+          body={stage && this.renderRows()}
           onScroll={this.onScroll.bind(this)}
+          onViewportUpdate={this.onScrollerViewportUpdate.bind(this)}
         />
-        {error ? <QueryError error={error}/> : null}
-        {loading ? <Loader/> : null}
-        <div className="button-bar">
-          <Button type="primary" className="close" onClick={onClose} title={STRINGS.close} />
-          <Button
-            type="secondary"
-            className="download"
-            onClick={download.bind(this, dataset, makeFileName(dataCube.name, filtersString, 'raw'), 'csv')}
-            title={STRINGS.download}
-            disabled={Boolean(loading || error)}
-          />
-        </div>
+        {error ? <QueryError error={error} /> : null}
+        {loading ? <Loader /> : null}
+        {this.renderButtons()}
       </div>
     </Modal>;
   }
 }
-

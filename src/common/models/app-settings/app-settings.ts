@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,23 +15,20 @@
  * limitations under the License.
  */
 
-import { Class, Instance, isInstanceOf, immutableArraysEqual, immutableEqual } from 'immutable-class';
-import { ImmutableUtils } from '../../utils/index';
-import { Executor, findByName, overrideByName } from 'swiv-plywood';
-import { hasOwnProperty } from '../../utils/general/general';
-import { Cluster, ClusterJS } from '../cluster/cluster';
-import { Customization, CustomizationJS } from '../customization/customization';
-import { DataCube, DataCubeJS } from  '../data-cube/data-cube';
-import { Collection, CollectionJS, CollectionContext } from '../collection/collection';
-import { Manifest } from '../manifest/manifest';
+import { Class, immutableArraysEqual, immutableEqual, Instance, NamedArray } from "immutable-class";
+import { Executor } from "plywood";
+import { hasOwnProperty } from "../../utils/general/general";
+import { ImmutableUtils } from "../../utils/index";
+import { Cluster, ClusterJS } from "../cluster/cluster";
+import { Customization, CustomizationJS } from "../customization/customization";
+import { DataCube, DataCubeJS } from "../data-cube/data-cube";
+import { Manifest } from "../manifest/manifest";
 
 export interface AppSettingsValue {
   version?: number;
   clusters?: Cluster[];
   customization?: Customization;
   dataCubes?: DataCube[];
-  linkViewConfig?: Collection;
-  collections?: Collection[];
 }
 
 export interface AppSettingsJS {
@@ -38,8 +36,6 @@ export interface AppSettingsJS {
   clusters?: ClusterJS[];
   customization?: CustomizationJS;
   dataCubes?: DataCubeJS[];
-  linkViewConfig?: CollectionJS;
-  collections?: CollectionJS[];
 }
 
 export interface AppSettingsContext {
@@ -48,23 +44,24 @@ export interface AppSettingsContext {
 }
 
 var check: Class<AppSettingsValue, AppSettingsJS>;
+
 export class AppSettings implements Instance<AppSettingsValue, AppSettingsJS> {
   static BLANK = AppSettings.fromJS({}, { visualizations: [] });
 
   static isAppSettings(candidate: any): candidate is AppSettings {
-    return isInstanceOf(candidate, AppSettings);
+    return candidate instanceof AppSettings;
   }
 
   static fromJS(parameters: AppSettingsJS, context?: AppSettingsContext): AppSettings {
-    if (!context) throw new Error('AppSettings must have context');
+    if (!context) throw new Error("AppSettings must have context");
     var clusters: Cluster[];
     if (parameters.clusters) {
       clusters = parameters.clusters.map(cluster => Cluster.fromJS(cluster));
 
-    } else if (hasOwnProperty(parameters, 'druidHost') || hasOwnProperty(parameters, 'brokerHost')) {
+    } else if (hasOwnProperty(parameters, "druidHost") || hasOwnProperty(parameters, "brokerHost")) {
       var clusterJS: any = JSON.parse(JSON.stringify(parameters));
-      clusterJS.name = 'druid';
-      clusterJS.type = 'druid';
+      clusterJS.name = "druid";
+      clusterJS.type = "druid";
       clusterJS.host = clusterJS.druidHost || clusterJS.brokerHost;
       clusters = [Cluster.fromJS(clusterJS)];
 
@@ -75,8 +72,8 @@ export class AppSettings implements Instance<AppSettingsValue, AppSettingsJS> {
     var executorFactory = context.executorFactory;
     var dataCubes = (parameters.dataCubes || (parameters as any).dataSources || []).map((dataCubeJS: DataCubeJS) => {
       var dataCubeClusterName = dataCubeJS.clusterName || (dataCubeJS as any).engine;
-      if (dataCubeClusterName !== 'native') {
-        var cluster = findByName(clusters, dataCubeClusterName);
+      if (dataCubeClusterName !== "native") {
+        var cluster = NamedArray.findByName(clusters, dataCubeClusterName);
         if (!cluster) throw new Error(`Can not find cluster '${dataCubeClusterName}' for data cube '${dataCubeJS.name}'`);
       }
 
@@ -88,18 +85,11 @@ export class AppSettings implements Instance<AppSettingsValue, AppSettingsJS> {
       return dataCubeObject;
     });
 
-    var collectionContext = { dataCubes, visualizations: context.visualizations };
-    var makeCollection = (js: CollectionJS) => {
-      return js ? Collection.fromJS(js, collectionContext) : null;
-    };
-
     var value: AppSettingsValue = {
       version: parameters.version,
       clusters,
       customization: Customization.fromJS(parameters.customization || {}),
-      dataCubes,
-      linkViewConfig: makeCollection(parameters.linkViewConfig),
-      collections: parameters.collections ? parameters.collections.map(makeCollection).filter(Boolean) : []
+      dataCubes
     };
 
     return new AppSettings(value);
@@ -109,22 +99,18 @@ export class AppSettings implements Instance<AppSettingsValue, AppSettingsJS> {
   public clusters: Cluster[];
   public customization: Customization;
   public dataCubes: DataCube[];
-  public linkViewConfig: Collection;
-  public collections: Collection[];
 
   constructor(parameters: AppSettingsValue) {
     const {
       version,
       clusters,
       customization,
-      dataCubes,
-      linkViewConfig,
-      collections
+      dataCubes
     } = parameters;
 
     for (var dataCube of dataCubes) {
-      if (dataCube.clusterName === 'native') continue;
-      if (!findByName(clusters, dataCube.clusterName)) {
+      if (dataCube.clusterName === "native") continue;
+      if (!NamedArray.findByName(clusters, dataCube.clusterName)) {
         throw new Error(`data cube ${dataCube.name} refers to an unknown cluster ${dataCube.clusterName}`);
       }
     }
@@ -133,8 +119,6 @@ export class AppSettings implements Instance<AppSettingsValue, AppSettingsJS> {
     this.clusters = clusters;
     this.customization = customization;
     this.dataCubes = dataCubes;
-    this.linkViewConfig = linkViewConfig;
-    this.collections = collections;
   }
 
   public valueOf(): AppSettingsValue {
@@ -142,9 +126,7 @@ export class AppSettings implements Instance<AppSettingsValue, AppSettingsJS> {
       version: this.version,
       clusters: this.clusters,
       customization: this.customization,
-      dataCubes: this.dataCubes,
-      linkViewConfig: this.linkViewConfig,
-      collections: this.collections
+      dataCubes: this.dataCubes
     };
   }
 
@@ -154,8 +136,6 @@ export class AppSettings implements Instance<AppSettingsValue, AppSettingsJS> {
     js.clusters = this.clusters.map(cluster => cluster.toJS());
     js.customization = this.customization.toJS();
     js.dataCubes = this.dataCubes.map(dataCube => dataCube.toJS());
-    if (this.collections.length > 0) js.collections = this.collections.map(c => c.toJS());
-    if (this.linkViewConfig) js.linkViewConfig = this.linkViewConfig.toJS();
     return js;
   }
 
@@ -172,19 +152,17 @@ export class AppSettings implements Instance<AppSettingsValue, AppSettingsJS> {
       this.version === other.version &&
       immutableArraysEqual(this.clusters, other.clusters) &&
       immutableEqual(this.customization, other.customization) &&
-      immutableArraysEqual(this.dataCubes, other.dataCubes) &&
-      Boolean(this.linkViewConfig) === Boolean(other.linkViewConfig) &&
-      immutableArraysEqual(this.collections, other.collections);
+      immutableArraysEqual(this.dataCubes, other.dataCubes);
   }
 
   public toClientSettings(): AppSettings {
     var value = this.valueOf();
 
-    value.clusters = value.clusters.map((c) => c.toClientCluster());
+    value.clusters = value.clusters.map(c => c.toClientCluster());
 
     value.dataCubes = value.dataCubes
-      .filter((ds) => ds.isQueryable())
-      .map((ds) => ds.toClientDataCube());
+      .filter(ds => ds.isQueryable())
+      .map(ds => ds.toClientDataCube());
 
     return new AppSettings(value);
   }
@@ -198,33 +176,12 @@ export class AppSettings implements Instance<AppSettingsValue, AppSettingsJS> {
   }
 
   public getDataCube(dataCubeName: string): DataCube {
-    return findByName(this.dataCubes, dataCubeName);
+    return NamedArray.findByName(this.dataCubes, dataCubeName);
   }
 
   public addOrUpdateDataCube(dataCube: DataCube): AppSettings {
     var value = this.valueOf();
-    value.dataCubes = overrideByName(value.dataCubes, dataCube);
-    return new AppSettings(value);
-  }
-
-  public addOrUpdateCollection(collection: Collection): AppSettings {
-    var value = this.valueOf();
-    value.collections = overrideByName(value.collections, collection);
-    return new AppSettings(value);
-  }
-
-  public deleteCollection(collection: Collection): AppSettings {
-    var value = this.valueOf();
-    var index = value.collections.indexOf(collection);
-
-    if (index === -1) {
-      throw new Error(`Unknown collection : ${collection.toString()}`);
-    }
-
-    var newCollections = value.collections.concat();
-    newCollections.splice(index, 1);
-
-    value.collections = newCollections;
+    value.dataCubes = NamedArray.overrideByName(value.dataCubes, dataCube);
     return new AppSettings(value);
   }
 
@@ -243,19 +200,9 @@ export class AppSettings implements Instance<AppSettingsValue, AppSettingsJS> {
     return new AppSettings(value);
   }
 
-  public addCollectionAt(collection: Collection, index: number): AppSettings {
-    var value = this.valueOf();
-
-    var newCollections = value.collections.concat();
-    newCollections.splice(index, 0, collection);
-
-    value.collections = newCollections;
-    return new AppSettings(value);
-  }
-
   public attachExecutors(executorFactory: (dataCube: DataCube) => Executor): AppSettings {
     var value = this.valueOf();
-    value.dataCubes = value.dataCubes.map((ds) => {
+    value.dataCubes = value.dataCubes.map(ds => {
       var executor = executorFactory(ds);
       if (executor) ds = ds.attachExecutor(executor);
       return ds;
@@ -268,15 +215,15 @@ export class AppSettings implements Instance<AppSettingsValue, AppSettingsJS> {
   }
 
   changeCustomization(customization: Customization): AppSettings {
-    return this.change('customization', customization);
+    return this.change("customization", customization);
   }
 
   changeClusters(clusters: Cluster[]): AppSettings {
-    return this.change('clusters', clusters);
+    return this.change("clusters", clusters);
   }
 
   addCluster(cluster: Cluster): AppSettings {
-    return this.changeClusters(overrideByName(this.clusters, cluster));
+    return this.changeClusters(NamedArray.overrideByName(this.clusters, cluster));
   }
 
   change(propertyName: string, newValue: any): AppSettings {
@@ -284,15 +231,11 @@ export class AppSettings implements Instance<AppSettingsValue, AppSettingsJS> {
   }
 
   changeDataCubes(dataCubes: DataCube[]): AppSettings {
-    return this.change('dataCubes', dataCubes);
-  }
-
-  changeCollections(collections: Collection[]): AppSettings {
-    return this.change('collections', collections);
+    return this.change("dataCubes", dataCubes);
   }
 
   addDataCube(dataCube: DataCube): AppSettings {
-    return this.changeDataCubes(overrideByName(this.dataCubes, dataCube));
+    return this.changeDataCubes(NamedArray.overrideByName(this.dataCubes, dataCube));
   }
 
   filterDataCubes(fn: (dataCube: DataCube, index?: number, dataCubes?: DataCube[]) => boolean): AppSettings {
@@ -302,4 +245,5 @@ export class AppSettings implements Instance<AppSettingsValue, AppSettingsJS> {
   }
 
 }
+
 check = AppSettings;

@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +15,15 @@
  * limitations under the License.
  */
 
-import * as path from 'path';
-import * as Q from 'q';
-import { External, findByName } from 'swiv-plywood';
-import { Logger } from 'logger-tracker';
-import { DruidRequestDecorator } from 'plywood-druid-requester';
-import { properRequesterFactory } from '../requester/requester';
-import { Cluster } from '../../../common/models/index';
+import { NamedArray } from "immutable-class";
+import * as path from "path";
+import { External } from "plywood";
+import { PlywoodRequester } from "plywood-base-api";
+import { DruidRequestDecorator } from "plywood-druid-requester";
+import * as Q from "q";
+import { Logger } from "../../../common/logger/logger";
+import { Cluster } from "../../../common/models/index";
+import { properRequesterFactory } from "../requester/requester";
 
 const CONNECTION_RETRY_TIMEOUT = 20000;
 const DRUID_REQUEST_DECORATOR_MODULE_VERSION = 1;
@@ -48,11 +51,13 @@ export interface ClusterManagerOptions {
   verbose?: boolean;
   anchorPath: string;
   initialExternals?: ManagedExternal[];
-  onExternalChange?: (name: string, external: External) => Q.Promise<any>;
+  onExternalChange?: (name: string, external: External) => Promise<any>;
   generateExternalName?: (external: External) => string;
 }
 
-function noop() {}
+function noop(): Promise<any> {
+  return Promise.resolve(null);
+}
 
 function getSourceFromExternal(external: External): string {
   return String(external.source);
@@ -64,23 +69,23 @@ export class ClusterManager {
   public anchorPath: string;
   public cluster: Cluster;
   public initialConnectionEstablished: boolean;
-  public introspectedSources: Lookup<boolean>;
+  public introspectedSources: Record<string, boolean>;
   public version: string;
-  public requester: Requester.PlywoodRequester<any>;
+  public requester: PlywoodRequester<any>;
   public managedExternals: ManagedExternal[] = [];
-  public onExternalChange: (name: string, external: External) => void;
+  public onExternalChange: (name: string, external: External) => Promise<any>;
   public generateExternalName: (external: External) => string;
   public requestDecoratorModule: DruidRequestDecoratorModule;
 
-  private sourceListRefreshInterval: number = 0;
+  private sourceListRefreshInterval = 0;
   private sourceListRefreshTimer: NodeJS.Timer = null;
-  private sourceReintrospectInterval: number = 0;
+  private sourceReintrospectInterval = 0;
   private sourceReintrospectTimer: NodeJS.Timer = null;
 
   private initialConnectionTimer: NodeJS.Timer = null;
 
   constructor(cluster: Cluster, options: ClusterManagerOptions) {
-    if (!cluster) throw new Error('must have cluster');
+    if (!cluster) throw new Error("must have cluster");
     this.logger = options.logger;
     this.verbose = Boolean(options.verbose);
     this.anchorPath = options.anchorPath;
@@ -95,7 +100,7 @@ export class ClusterManager {
     this.updateRequestDecorator();
     this.updateRequester();
 
-    this.managedExternals.forEach((managedExternal) => {
+    this.managedExternals.forEach(managedExternal => {
       managedExternal.external = managedExternal.external.attachRequester(this.requester);
     });
   }
@@ -133,15 +138,15 @@ export class ClusterManager {
     }
   }
 
-  private addManagedExternal(managedExternal: ManagedExternal): Q.Promise<any> {
+  private addManagedExternal(managedExternal: ManagedExternal): Promise<any> {
     this.managedExternals.push(managedExternal);
-    return Q(this.onExternalChange(managedExternal.name, managedExternal.external));
+    return this.onExternalChange(managedExternal.name, managedExternal.external);
   }
 
-  private updateManagedExternal(managedExternal: ManagedExternal, newExternal: External): Q.Promise<any> {
+  private updateManagedExternal(managedExternal: ManagedExternal, newExternal: External): Promise<any> {
     if (managedExternal.external.equals(newExternal)) return null;
     managedExternal.external = newExternal;
-    return Q(this.onExternalChange(managedExternal.name, managedExternal.external));
+    return this.onExternalChange(managedExternal.name, managedExternal.external);
   }
 
   private updateRequestDecorator(): void {
@@ -165,7 +170,7 @@ export class ClusterManager {
     const { cluster, logger, requestDecoratorModule } = this;
 
     var druidRequestDecorator: DruidRequestDecorator = null;
-    if (cluster.type === 'druid' && requestDecoratorModule) {
+    if (cluster.type === "druid" && requestDecoratorModule) {
       logger.log(`Cluster '${cluster.name}' creating requestDecorator`);
       druidRequestDecorator = requestDecoratorModule.druidRequestDecoratorFactory(logger, {
         options: cluster.decoratorOptions,
@@ -184,7 +189,8 @@ export class ClusterManager {
 
       database: cluster.database,
       user: cluster.user,
-      password: cluster.password
+      password: cluster.password,
+      protocol: cluster.protocol
     });
   }
 
@@ -202,11 +208,14 @@ export class ClusterManager {
 
       if (this.sourceListRefreshInterval && cluster.shouldScanSources()) {
         logger.log(`Setting up sourceListRefresh timer in cluster '${cluster.name}' (every ${this.sourceListRefreshInterval}ms)`);
-        this.sourceListRefreshTimer = setInterval(() => {
-          this.scanSourceList().catch((e) => {
-            logger.error(`Cluster '${cluster.name}' encountered and error during SourceListRefresh: ${e.message}`);
-          });
-        }, this.sourceListRefreshInterval);
+        this.sourceListRefreshTimer = setInterval(
+          () => {
+            this.scanSourceList().catch(e => {
+              logger.error(`Cluster '${cluster.name}' encountered and error during SourceListRefresh: ${e.message}`);
+            });
+          },
+          this.sourceListRefreshInterval
+        );
         this.sourceListRefreshTimer.unref();
       }
     }
@@ -226,11 +235,14 @@ export class ClusterManager {
 
       if (this.sourceReintrospectInterval) {
         logger.log(`Setting up sourceReintrospect timer in cluster '${cluster.name}' (every ${this.sourceReintrospectInterval}ms)`);
-        this.sourceReintrospectTimer = setInterval(() => {
-          this.introspectSources().catch((e) => {
-            logger.error(`Cluster '${cluster.name}' encountered and error during SourceReintrospect: ${e.message}`);
-          });
-        }, this.sourceReintrospectInterval);
+        this.sourceReintrospectTimer = setInterval(
+          () => {
+            this.introspectSources().catch(e => {
+              logger.error(`Cluster '${cluster.name}' encountered and error during SourceReintrospect: ${e.message}`);
+            });
+          },
+          this.sourceReintrospectInterval
+        );
         this.sourceReintrospectTimer.unref();
       }
     }
@@ -298,14 +310,14 @@ export class ClusterManager {
     );
   }
 
-  private introspectManagedExternal(managedExternal: ManagedExternal): Q.Promise<any> {
+  private introspectManagedExternal(managedExternal: ManagedExternal): Promise<any> {
     const { logger, verbose, cluster } = this;
-    if (managedExternal.suppressIntrospection) return Q(null);
+    if (managedExternal.suppressIntrospection) return Promise.resolve(null);
 
     if (verbose) logger.log(`Cluster '${cluster.name}' introspecting '${managedExternal.name}'`);
     return managedExternal.external.introspect()
       .then(
-        (introspectedExternal) => {
+        introspectedExternal => {
           this.introspectedSources[String(introspectedExternal.source)] = true;
           return this.updateManagedExternal(managedExternal, introspectedExternal);
         },
@@ -316,18 +328,18 @@ export class ClusterManager {
   }
 
   // See if any new sources were added to the cluster
-  public scanSourceList(): Q.Promise<any> {
+  public scanSourceList(): Promise<any> {
     const { logger, cluster, verbose } = this;
-    if (!cluster.shouldScanSources()) return Q(null);
+    if (!cluster.shouldScanSources()) return Promise.resolve(null);
 
     logger.log(`Scanning cluster '${cluster.name}' for new sources`);
     return (External.getConstructorFor(cluster.type) as any).getSourceList(this.requester)
       .then(
         (sources: string[]) => {
-          if (verbose) logger.log(`For cluster '${cluster.name}' got sources: [${sources.join(', ')}]`);
+          if (verbose) logger.log(`For cluster '${cluster.name}' got sources: [${sources.join(", ")}]`);
           // For every un-accounted source: make an external and add it to the managed list.
-          var introspectionTasks: Q.Promise<any>[] = [];
-          sources.forEach((source) => {
+          var introspectionTasks: Array<Promise<any>> = [];
+          sources.forEach(source => {
             var existingExternalsForSource = this.managedExternals.filter(managedExternal => getSourceFromExternal(managedExternal.external) === source);
 
             if (existingExternalsForSource.length) {
@@ -345,7 +357,7 @@ export class ClusterManager {
               var external = cluster.makeExternalFromSourceName(source, this.version).attachRequester(this.requester);
               var newManagedExternal: ManagedExternal = {
                 name: this.generateExternalName(external),
-                external: external,
+                external,
                 autoDiscovered: true
               };
               introspectionTasks.push(
@@ -370,7 +382,7 @@ export class ClusterManager {
 
     logger.log(`Introspecting all sources in cluster '${cluster.name}'`);
 
-    return Q.all(this.managedExternals.map((managedExternal) => {
+    return Q.all(this.managedExternals.map(managedExternal => {
       return this.introspectManagedExternal(managedExternal);
     }));
   }
@@ -393,7 +405,7 @@ export class ClusterManager {
   }
 
   public getExternalByName(name: string): External {
-    var managedExternal = findByName(this.managedExternals, name);
+    var managedExternal = NamedArray.findByName(this.managedExternals, name);
     return managedExternal ? managedExternal.external : null;
   }
 

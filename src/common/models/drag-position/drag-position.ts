@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +15,8 @@
  * limitations under the License.
  */
 
-import { Class, Instance, isInstanceOf } from 'immutable-class';
-import { hasOwnProperty } from '../../utils/general/general';
+import { Class, Instance } from "immutable-class";
+import { hasOwnProperty } from "../../utils/general/general";
 
 export interface DragPositionValue {
   insert?: number;
@@ -28,10 +29,11 @@ export interface DragPositionJS {
 }
 
 var check: Class<DragPositionValue, DragPositionJS>;
+
 export class DragPosition implements Instance<DragPositionValue, DragPositionJS> {
 
   static isDragPosition(candidate: any): candidate is DragPosition {
-    return isInstanceOf(candidate, DragPosition);
+    return candidate instanceof DragPosition;
   }
 
   static calculateFromOffset(offset: number, numItems: number, itemWidth: number, itemGap: number): DragPosition {
@@ -71,14 +73,13 @@ export class DragPosition implements Instance<DragPositionValue, DragPositionJS>
     return new DragPosition(parameters);
   }
 
-
   public insert: number;
   public replace: number;
 
   constructor(parameters: DragPositionValue) {
-    this.insert = hasOwnProperty(parameters, 'insert') ? parameters.insert : null;
-    this.replace = hasOwnProperty(parameters, 'replace') ? parameters.replace : null;
-    if (this.insert == null && this.replace == null) throw new Error('invalid drag position');
+    this.insert = hasOwnProperty(parameters, "insert") ? parameters.insert : null;
+    this.replace = hasOwnProperty(parameters, "replace") ? parameters.replace : null;
+    if (this.insert == null && this.replace == null) throw new Error("invalid drag position");
   }
 
   public valueOf(): DragPositionValue {
@@ -122,4 +123,5 @@ export class DragPosition implements Instance<DragPositionValue, DragPositionJS>
   }
 
 }
+
 check = DragPosition;

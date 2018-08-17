@@ -1,6 +1,12 @@
 dataCubes:
   - name: wiki
     title: Wikipedia Example
+    description: |
+      Data cube with *Wikipedia* data.
+      ---
+      Contains data about Wikipedia editors and articles with information about edits, comments and article metadata
+
+      *Based on wikiticker from 2015-09-12*
     clusterName: native
     source: assets/data/wikiticker-2015-09-12-sampled.json
     timeAttribute: time
@@ -10,7 +16,8 @@ dataCubes:
       time: 2015-09-13T00:00:00.000Z
 
     defaultDuration: P1D
-    defaultSortMeasure: delta
+    defaultSortMeasure: added
+    defaultSelectedMeasures: ["added"]
 
     defaultPinnedDimensions: ["channel","namespace","isRobot"]
     introspection: no-autofill
@@ -38,19 +45,32 @@ dataCubes:
         title: City Name
         formula: $cityName
 
-      - name: comment
-        title: Comment
-        formula: $comment
+      - name: comments
+        title: Comments
+        dimensions:
 
-      - name: commentLength
-        title: Comment Length
-        kind: number
-        formula: $commentLength
+          - name: comment
+            title: Comment
+            formula: $comment
 
-      - name: commentLengthOver100
-        title: Comment Length Over 100
-        kind: boolean
-        formula: $commentLength > 100
+          - name: commentLengths
+            title: Comment Lengths
+            description: Length of the comment
+            dimensions:
+
+              - name: commentLength
+                title: Comment Length
+                kind: number
+                description: |
+                  Lengths of *all* comments
+                formula: $commentLength
+
+              - name: commentLengthOver100
+                title: Comment Length Over 100
+                description: |
+                  `true` only if comment length is over `100`
+                kind: boolean
+                formula: $commentLength > 100
 
       - name: countryIso
         title: Country ISO
@@ -118,20 +138,30 @@ dataCubes:
         formula: $userChars
 
     measures:
-      - name: count
-        title: Rows
-        formula: $main.count()
+      - name: rowsAndDeltas
+        title: Rows & Deltas
+        measures:
 
-      - name: delta
-        title: Delta
-        formula: $main.sum($delta)
+          - name: count
+            title: Rows
+            formula: $main.count()
 
-      - name: avg_delta
-        title: Avg Delta
-        formula: $main.average($delta)
+          - name: deltas
+            title: Deltas
+            measures:
+
+              - name: delta
+                title: Delta
+                formula: $main.sum($delta)
+
+              - name: avg_delta
+                title: Avg Delta
+                formula: $main.average($delta)
 
       - name: added
         title: Added
+        description: |
+          Sum of all additions
         formula: $main.sum($added)
 
       - name: avg_added
@@ -140,6 +170,8 @@ dataCubes:
 
       - name: deleted
         title: Deleted
+        description: |
+          Sum of all deletions
         formula: $main.sum($deleted)
 
       - name: avg_deleted

@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +15,9 @@
  * limitations under the License.
  */
 
-import { Dataset } from 'swiv-plywood';
-import { Fn } from '../../utils/general/general';
-import { Clicker, Stage, Essence, Timekeeper, DeviceSize } from '../index';
+import { Dataset } from "plywood";
+import { Fn } from "../../utils/general/general";
+import { Clicker, DeviceSize, Essence, Stage, Timekeeper } from "../index";
 
 export interface VisualizationProps {
   clicker: Clicker;

@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +15,14 @@
  * limitations under the License.
  */
 
-require('./user-menu.css');
+import * as React from "react";
+import { Customization, Stage, User } from "../../../common/models/index";
+import { Fn } from "../../../common/utils/general/general";
+import { STRINGS } from "../../config/constants";
+import { BubbleMenu } from "../bubble-menu/bubble-menu";
+import "./user-menu.scss";
 
-import * as React from 'react';
-import { Fn } from '../../../common/utils/general/general';
-import { Stage, User, Customization } from '../../../common/models/index';
-import { STRINGS } from '../../config/constants';
-import { BubbleMenu } from '../bubble-menu/bubble-menu';
-
-export interface UserMenuProps extends React.Props<any> {
+export interface UserMenuProps {
   openOn: Element;
   onClose: Fn;
   user: User;
@@ -33,9 +33,6 @@ export interface UserMenuState {
 }
 
 export class UserMenu extends React.Component<UserMenuProps, UserMenuState> {
-  constructor() {
-    super();
-  }
 
   render() {
     var { openOn, onClose, user, customization } = this.props;
@@ -54,7 +51,9 @@ export class UserMenu extends React.Component<UserMenuProps, UserMenuState> {
         >{user.displayName}</li>
         <li
           className="logout"
-        ><a href={customization.getLogoutHref()}><div>{STRINGS.logout}</div></a></li>
+        ><a href={customization.getLogoutHref()}>
+          <div>{STRINGS.logout}</div>
+        </a></li>
       </ul>
     </BubbleMenu>;
   }

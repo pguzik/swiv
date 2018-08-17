@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,27 +15,16 @@
  * limitations under the License.
  */
 
-import { expect } from 'chai';
-import * as sinon from 'sinon';
-import * as React from 'react';
-import * as ReactDOM from 'react-dom';
-import * as TestUtils from 'react-addons-test-utils';
+import { expect } from "chai";
+import { shallow } from "enzyme";
+import * as React from "react";
 
-import '../../utils/test-utils/index';
+import { NavList } from "./nav-list";
 
-import { $, Expression } from 'swiv-plywood';
-import { NavList } from './nav-list';
+describe("NavList", () => {
+  it("adds the correct class", () => {
+    const navList = shallow(<NavList navLinks={[]}/>);
 
-describe('NavList', () => {
-  it('adds the correct class', () => {
-    var renderedComponent = TestUtils.renderIntoDocument(
-      <NavList
-        navLinks={[]}
-      />
-    );
-
-    expect(TestUtils.isCompositeComponent(renderedComponent), 'should be composite').to.equal(true);
-    expect((ReactDOM.findDOMNode(renderedComponent) as any).className, 'should contain class').to.contain('nav-list');
+    expect(navList.hasClass("nav-list"), "should contain class").to.be.true;
   });
-
 });

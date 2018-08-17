@@ -1,12 +1,27 @@
-import * as React from 'react';
-import * as ReactDOM from 'react-dom';
-import { firstUp } from '../../../common/utils/string/string';
-import { escapeKey, enterKey, leftKey, rightKey } from '../../utils/dom/dom';
+/*
+ * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
+import * as React from "react";
+import { firstUp } from "../../../common/utils/string/string";
+import { enterKey, escapeKey, leftKey, rightKey } from "../../utils/dom/dom";
 
-export interface GlobalEventListenerProps extends React.Props<any> {
+export interface GlobalEventListenerProps {
   resize?: () => void;
-  scroll?: () => void;
+  scroll?: (e: MouseEvent) => void;
   mouseDown?: (e: MouseEvent) => void;
   mouseMove?: (e: MouseEvent) => void;
   mouseUp?: (e: MouseEvent) => void;
@@ -23,20 +38,20 @@ export interface GlobalEventListenerState {
 export class GlobalEventListener extends React.Component<GlobalEventListenerProps, GlobalEventListenerState> {
   public mounted: boolean;
   private propsToEvents: any = {
-    resize: 'resize',
-    scroll: 'scroll',
-    mouseDown: 'mousedown',
-    mouseMove: 'mousemove',
-    mouseUp: 'mouseup',
-    keyDown: 'keydown',
-    enter: 'keydown',
-    escape: 'keydown',
-    right: 'keydown',
-    left: 'keydown'
+    resize: "resize",
+    scroll: "scroll",
+    mouseDown: "mousedown",
+    mouseMove: "mousemove",
+    mouseUp: "mouseup",
+    keyDown: "keydown",
+    enter: "keydown",
+    escape: "keydown",
+    right: "keydown",
+    left: "keydown"
   };
 
-  constructor() {
-    super();
+  constructor(props: GlobalEventListenerProps) {
+    super(props);
 
     this.onResize = this.onResize.bind(this);
     this.onMousemove = this.onMousemove.bind(this);
@@ -81,7 +96,7 @@ export class GlobalEventListener extends React.Component<GlobalEventListenerProp
   }
 
   addListener(event: string) {
-    var useCapture = event === 'scroll';
+    var useCapture = event === "scroll";
     window.addEventListener(event, (this as any)[`on${firstUp(event)}`], useCapture);
   }
 
@@ -93,8 +108,8 @@ export class GlobalEventListener extends React.Component<GlobalEventListenerProp
     if (this.props.resize) this.props.resize();
   }
 
-  onScroll() {
-    if (this.props.scroll) this.props.scroll();
+  onScroll(e: MouseEvent) {
+    if (this.props.scroll) this.props.scroll(e);
   }
 
   onMousedown(e: MouseEvent) {

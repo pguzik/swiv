@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +15,36 @@
  * limitations under the License.
  */
 
-import { expect } from 'chai';
-import * as sinon from 'sinon';
-import * as React from 'react';
-import * as ReactDOM from 'react-dom';
+import { expect } from "chai";
+import "../../utils/test-utils";
+import normalizeStyles from "./normalize-styles";
 
-import * as TestUtils from 'react-addons-test-utils';
+const defaultRest = {
+  "pointer-events": "auto",
+  "z-index": 200
+};
 
-import '../../utils/test-utils/index';
+describe("BodyPortal", () => {
+  describe("normalize-styles", () => {
 
-import { $, Expression } from 'swiv-plywood';
-import { BodyPortal } from './body-portal';
+    it("should add 'px' prefix to number dimensions", () => {
+      const source = { left: 10, right: 20, top: 30, bottom: 40 };
+      const result = { left: "10px", right: "20px", top: "30px", bottom: "40px", ...defaultRest };
+      expect(normalizeStyles(source)).to.be.deep.equal(result);
+    });
+  });
 
-describe('BodyPortal', () => {
+  it("should pass string dimensions unchanged", () => {
+    const source = { left: "auto", right: "100%", top: "inherit", bottom: "10em" };
+    const result = { left: "auto", right: "100%", top: "inherit", bottom: "10em", ...defaultRest };
+    expect(normalizeStyles(source)).to.be.deep.equal(result);
+  });
 
+  it("should set pointer events to 'none' when passed 'dissablePointerEvents", () => {
+    expect(normalizeStyles({ disablePointerEvents: true })).to.be.deep.equal({ ...defaultRest, "pointer-events": "none" });
+  });
+
+  it("should set bigger z-index when aboveAll", () => {
+    expect(normalizeStyles({ isAboveAll: true })).to.be.deep.equal({ ...defaultRest, "z-index": 201 });
+  });
 });

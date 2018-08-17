@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -116,7 +117,7 @@ describe('list refresh on load with datasource', function () {
     }, function(err, port) {
       if (err) return done(err);
 
-      swivServer = spawnServer(`bin/swiv -c test/configs/list-refresh-on-load-datasource.yaml -p ${TEST_PORT}`, {
+      swivServer = spawnServer(`bin/turnilo -c test/configs/list-refresh-on-load-datasource.yaml -p ${TEST_PORT}`, {
         env: {
           DRUID_HOST: `localhost:${port}`
         }

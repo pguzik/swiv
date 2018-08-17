@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +15,7 @@
  * limitations under the License.
  */
 
-import { Class, Instance, isInstanceOf } from 'immutable-class';
-import { Duration } from 'chronoshift';
+import { Class, Instance } from "immutable-class";
 
 export interface RefreshRuleValue {
   rule: string;
@@ -28,14 +28,15 @@ export interface RefreshRuleJS {
 }
 
 var check: Class<RefreshRuleValue, RefreshRuleJS>;
+
 export class RefreshRule implements Instance<RefreshRuleValue, RefreshRuleJS> {
 
-  static FIXED = 'fixed';
-  static QUERY = 'query';
-  static REALTIME = 'realtime';
+  static FIXED = "fixed";
+  static QUERY = "query";
+  static REALTIME = "realtime";
 
   static isRefreshRule(candidate: any): candidate is RefreshRule {
-    return isInstanceOf(candidate, RefreshRule);
+    return candidate instanceof RefreshRule;
   }
 
   static query(): RefreshRule {
@@ -49,11 +50,10 @@ export class RefreshRule implements Instance<RefreshRuleValue, RefreshRuleJS> {
       rule: parameters.rule
     };
     if (parameters.time) {
-      value.time = new Date(<any>parameters.time);
+      value.time = new Date(<any> parameters.time);
     }
     return new RefreshRule(value);
   }
-
 
   public rule: string;
   public time: Date;
@@ -114,4 +114,5 @@ export class RefreshRule implements Instance<RefreshRuleValue, RefreshRuleJS> {
   }
 
 }
+
 check = RefreshRule;

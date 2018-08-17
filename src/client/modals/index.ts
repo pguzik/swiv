@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +15,6 @@
  * limitations under the License.
  */
 
-export * from './about-modal/about-modal';
-export * from './name-description-modal/name-description-modal';
-export * from './add-collection-tile-modal/add-collection-tile-modal';
-export * from './cluster-seed-modal/cluster-seed-modal';
-export * from './data-cube-seed-modal/data-cube-seed-modal';
-export * from './dimension-modal/dimension-modal';
-export * from './measure-modal/measure-modal';
-export * from './raw-data-modal/raw-data-modal';
-export * from './suggestion-modal/suggestion-modal';
+export * from "./about-modal/about-modal";
+export * from "./raw-data-modal/raw-data-modal";
+export * from "./view-definition-modal/view-definition-modal";

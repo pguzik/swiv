@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,40 +15,38 @@
  * limitations under the License.
  */
 
-require('./split-menu.css');
-
+import { NumberBucketExpression, SortExpression, TimeBucketExpression } from "plywood";
 import * as React from "react";
-import { Timezone, Duration } from "chronoshift";
-import { TimeBucketAction, NumberBucketAction, SortAction } from "swiv-plywood";
-import { Fn, formatGranularity } from "../../../common/utils/index";
 import {
-  Stage,
   Clicker,
-  Essence,
-  VisStrategy,
-  SplitCombine,
   Colors,
+  ContinuousDimensionKind,
   Dimension,
-  SortOn,
+  Essence,
+  getGranularities,
   Granularity,
   granularityToString,
+  SortOn,
+  SplitCombine,
+  Stage,
   updateBucketSize,
-  getGranularities,
-  ContinuousDimensionKind
+  VisStrategy
 } from "../../../common/models/index";
+import { Fn, formatGranularity } from "../../../common/utils/index";
 import { STRINGS } from "../../config/constants";
 import { enterKey } from "../../utils/dom/dom";
-import { SvgIcon } from "../svg-icon/svg-icon";
 import { BubbleMenu } from "../bubble-menu/bubble-menu";
-import { Dropdown } from "../dropdown/dropdown";
 import { ButtonGroup } from "../button-group/button-group";
+import { Dropdown } from "../dropdown/dropdown";
+import { SvgIcon } from "../svg-icon/svg-icon";
+import "./split-menu.scss";
 
 function formatLimit(limit: number | string): string {
-  if (limit === 'custom') return 'Custom';
-  return limit === null ? 'None' : String(limit);
+  if (limit === "custom") return "Custom";
+  return limit === null ? "None" : String(limit);
 }
 
-export interface SplitMenuProps extends React.Props<any> {
+export interface SplitMenuProps {
   clicker: Clicker;
   essence: Essence;
   openOn: Element;
@@ -66,8 +65,8 @@ export interface SplitMenuState {
 export class SplitMenu extends React.Component<SplitMenuProps, SplitMenuState> {
   public mounted: boolean;
 
-  constructor() {
-    super();
+  constructor(props: SplitMenuProps) {
+    super(props);
     this.state = {
       split: null,
       colors: null
@@ -94,11 +93,11 @@ export class SplitMenu extends React.Component<SplitMenuProps, SplitMenuState> {
   }
 
   componentDidMount() {
-    window.addEventListener('keydown', this.globalKeyDownListener);
+    window.addEventListener("keydown", this.globalKeyDownListener);
   }
 
   componentWillUnmount() {
-    window.removeEventListener('keydown', this.globalKeyDownListener);
+    window.removeEventListener("keydown", this.globalKeyDownListener);
   }
 
   globalKeyDownListener(e: KeyboardEvent) {
@@ -118,9 +117,9 @@ export class SplitMenu extends React.Component<SplitMenuProps, SplitMenuState> {
   onSelectSortOn(sortOn: SortOn): void {
     var { split } = this.state;
     var sortAction = split.sortAction;
-    var direction = sortAction ? sortAction.direction : SortAction.DESCENDING;
+    var direction = sortAction ? sortAction.direction : SortExpression.DESCENDING;
     this.setState({
-      split: split.changeSortAction(new SortAction({
+      split: split.changeSortExpression(new SortExpression({
         expression: sortOn.getExpression(),
         direction
       }))
@@ -131,7 +130,7 @@ export class SplitMenu extends React.Component<SplitMenuProps, SplitMenuState> {
     var { split } = this.state;
     var { sortAction } = split;
     this.setState({
-      split: split.changeSortAction(sortAction.toggleDirection())
+      split: split.changeSortExpression(sortAction.toggleDirection())
     });
   }
 
@@ -167,7 +166,7 @@ export class SplitMenu extends React.Component<SplitMenuProps, SplitMenuState> {
   getSortOn(): SortOn {
     var { essence, dimension } = this.props;
     var { split } = this.state;
-    return SortOn.fromSortAction(split.sortAction, essence.dataCube, dimension);
+    return SortOn.fromSortExpression(split.sortAction, essence.dataCube, dimension);
   }
 
   renderGranularityPicker(type: ContinuousDimensionKind) {
@@ -185,17 +184,15 @@ export class SplitMenu extends React.Component<SplitMenuProps, SplitMenuState> {
       };
     });
 
-    return <ButtonGroup title={STRINGS.granularity} groupMembers={buttons} />;
+    return <ButtonGroup title={STRINGS.granularity} groupMembers={buttons}/>;
   }
 
   renderSortDropdown() {
     var { essence, dimension } = this.props;
 
-    var sortOns = [SortOn.fromDimension(dimension)].concat(essence.dataCube.measures.toArray().map(SortOn.fromMeasure));
+    var sortOns = [SortOn.fromDimension(dimension)].concat(essence.dataCube.measures.mapMeasures(SortOn.fromMeasure));
 
-    const SortOnDropdown = Dropdown.specialize<SortOn>();
-
-    return <SortOnDropdown
+    return <Dropdown<SortOn>
       label={STRINGS.sortBy}
       items={sortOns}
       selectedItem={this.getSortOn()}
@@ -212,8 +209,8 @@ export class SplitMenu extends React.Component<SplitMenuProps, SplitMenuState> {
 
     return <div className="sort-direction">
       {this.renderSortDropdown()}
-      <div className={'direction ' + direction} onClick={this.onToggleDirection.bind(this)}>
-        <SvgIcon svg={require('../../icons/sort-arrow.svg')}/>
+      <div className={"direction " + direction} onClick={this.onToggleDirection.bind(this)}>
+        <SvgIcon svg={require("../../icons/sort-arrow.svg")}/>
       </div>
     </div>;
   }
@@ -224,17 +221,15 @@ export class SplitMenu extends React.Component<SplitMenuProps, SplitMenuState> {
     var { limitAction } = split;
 
     var items: Array<number | string> = [5, 10, 25, 50, 100];
-    var selectedItem: number | string = limitAction ? limitAction.limit : null;
+    var selectedItem: number | string = limitAction ? limitAction.value : null;
     if (colors) {
       items = [3, 5, 7, 9, 10];
-      selectedItem = colors.values ? 'custom' : colors.limit;
+      selectedItem = colors.values ? "custom" : colors.limit;
     }
 
     if (includeNone) items.unshift(null);
 
-    const MyDropdown = Dropdown.specialize<number | string>();
-
-    return <MyDropdown
+    return <Dropdown<number | string>
       label={STRINGS.limit}
       items={items}
       selectedItem={selectedItem}
@@ -245,7 +240,7 @@ export class SplitMenu extends React.Component<SplitMenuProps, SplitMenuState> {
 
   renderTimeControls() {
     return <div>
-      {this.renderGranularityPicker('time')}
+      {this.renderGranularityPicker("time")}
       {this.renderSortDirection()}
       {this.renderLimitDropdown(true)}
     </div>;
@@ -253,7 +248,7 @@ export class SplitMenu extends React.Component<SplitMenuProps, SplitMenuState> {
 
   renderNumberControls() {
     return <div>
-      {this.renderGranularityPicker('number')}
+      {this.renderGranularityPicker("number")}
       {this.renderSortDirection()}
       {this.renderLimitDropdown(true)}
     </div>;
@@ -283,9 +278,9 @@ export class SplitMenu extends React.Component<SplitMenuProps, SplitMenuState> {
     var menuSize = Stage.fromSize(250, 240);
 
     var menuControls: JSX.Element = null;
-    if (split.bucketAction instanceof TimeBucketAction) {
+    if (split.bucketAction instanceof TimeBucketExpression) {
       menuControls = this.renderTimeControls();
-    } else if (split.bucketAction instanceof NumberBucketAction) {
+    } else if (split.bucketAction instanceof NumberBucketExpression) {
       menuControls = this.renderNumberControls();
     } else {
       menuControls = this.renderStringControls();

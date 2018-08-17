@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +15,10 @@
  * limitations under the License.
  */
 
-import { List } from 'immutable';
-import { Class, Instance, isInstanceOf, immutableArraysEqual } from 'immutable-class';
-import { $, Expression } from 'swiv-plywood';
-import { Dimension } from '../dimension/dimension';
-import { Filter, FilterJS } from '../filter/filter';
+import { Class, Instance } from "immutable-class";
+import { Expression } from "plywood";
+import { Dimensions } from "../dimension/dimensions";
+import { Filter, FilterJS } from "../filter/filter";
 
 export interface HighlightValue {
   owner: string;
@@ -33,10 +33,11 @@ export interface HighlightJS {
 }
 
 var check: Class<HighlightValue, HighlightJS>;
+
 export class Highlight implements Instance<HighlightValue, HighlightJS> {
 
   static isHighlight(candidate: any): candidate is Highlight {
-    return isInstanceOf(candidate, Highlight);
+    return candidate instanceof Highlight;
   }
 
   static fromJS(parameters: HighlightJS): Highlight {
@@ -47,14 +48,13 @@ export class Highlight implements Instance<HighlightValue, HighlightJS> {
     });
   }
 
-
   public owner: string;
   public delta: Filter;
   public measure: string;
 
   constructor(parameters: HighlightValue) {
     var owner = parameters.owner;
-    if (typeof owner !== 'string') throw new TypeError('owner must be a string');
+    if (typeof owner !== "string") throw new TypeError("owner must be a string");
     this.owner = owner;
     this.delta = parameters.delta;
     this.measure = parameters.measure || null;
@@ -96,7 +96,7 @@ export class Highlight implements Instance<HighlightValue, HighlightJS> {
     return filter.applyDelta(this.delta);
   }
 
-  public constrainToDimensions(dimensions: List<Dimension>, timeAttribute: Expression): Highlight {
+  public constrainToDimensions(dimensions: Dimensions, timeAttribute: Expression): Highlight {
     var { delta } = this;
     var newDelta = delta.constrainToDimensions(dimensions, timeAttribute);
     if (newDelta === delta) return this;
@@ -107,4 +107,5 @@ export class Highlight implements Instance<HighlightValue, HighlightJS> {
     return new Highlight(value);
   }
 }
+
 check = Highlight;

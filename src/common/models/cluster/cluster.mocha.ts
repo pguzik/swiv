@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,58 +15,44 @@
  * limitations under the License.
  */
 
-import { expect } from 'chai';
-import { testImmutableClass } from 'immutable-class-tester';
+import { testImmutableClass } from "immutable-class-tester";
 
-import { Cluster } from './cluster';
+import { Cluster } from "./cluster";
 
-describe('Cluster', () => {
-  it('is an immutable class', () => {
+describe("Cluster", () => {
+  it("is an immutable class", () => {
     testImmutableClass(Cluster, [
       {
-        name: 'my-druid-cluster',
-        type: 'druid'
+        name: "my-druid-cluster",
+        type: "druid"
       },
       {
-        name: 'my-druid-cluster',
-        type: 'druid',
-        host: '192.168.99.100',
-        version: '0.9.1',
+        name: "my-druid-cluster",
+        type: "druid",
+        host: "192.168.99.100",
+        version: "0.9.1",
         timeout: 30000,
-        sourceListScan: 'auto',
+        healthCheckTimeout: 50,
+        sourceListScan: "auto",
         sourceListRefreshOnLoad: true,
         sourceListRefreshInterval: 10000,
         sourceReintrospectInterval: 10000,
 
-        introspectionStrategy: 'segment-metadata-fallback'
+        introspectionStrategy: "segment-metadata-fallback"
       },
       {
-        name: 'my-mysql-cluster',
-        type: 'mysql',
-        host: '192.168.99.100',
+        name: "my-mysql-cluster",
+        type: "druid",
+        host: "192.168.99.100",
         timeout: 30000,
-        sourceListScan: 'auto',
-        sourceListRefreshInterval: 10000,
-        sourceReintrospectOnLoad: true,
-        sourceReintrospectInterval: 10000,
-
-        database: 'datazoo',
-        user: 'datazoo-user',
-        password: 'koalas'
+        sourceListScan: "auto"
       },
       {
-        name: 'my-mysql-cluster',
-        type: 'druid',
-        host: '192.168.99.100',
+        name: "my-mysql-cluster",
+        type: "druid",
+        host: "192.168.99.100",
         timeout: 30000,
-        sourceListScan: 'auto'
-      },
-      {
-        name: 'my-mysql-cluster',
-        type: 'druid',
-        host: '192.168.99.100',
-        timeout: 30000,
-        sourceListScan: 'auto',
+        sourceListScan: "auto",
         sourceListRefreshInterval: 0,
         sourceReintrospectInterval: 0
       }

@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,13 +34,5 @@
   .link-view,
   .settings-view {
     @include pin-full;
-  }
-
-  .side-drawer-container {
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    z-index: 80;
   }
 }

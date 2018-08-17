@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +28,7 @@ describe('config typo', function () {
   this.timeout(5000);
 
   before((done) => {
-    swivServer = spawnServer(`bin/swiv --config test/configs/one-little-datasource.yaml -p ${TEST_PORT}`, {
+    swivServer = spawnServer(`bin/turnilo --config test/configs/one-little-datasource.yaml -p ${TEST_PORT}`, {
       env: {
         DRUID_HOST: '11.22.33.44:5555'
       }

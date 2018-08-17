@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,33 +15,36 @@
  * limitations under the License.
  */
 
-require('./vis-measure-label.css');
+import { Datum } from "plywood";
+import * as React from "react";
+import { Delta } from "..";
+import { Measure, MeasureDerivation } from "../../../common/models/index";
+import "./vis-measure-label.scss";
 
-import * as React from 'react';
-import { Datum } from 'swiv-plywood';
-import { Measure } from '../../../common/models/index';
-
-export interface VisMeasureLabelProps extends React.Props<any> {
+export interface VisMeasureLabelProps {
   measure: Measure;
   datum: Datum;
+  showPrevious: boolean;
 }
 
-export interface VisMeasureLabelState {
+function renderPrevious(measure: Measure, datum: Datum): JSX.Element {
+  const current = datum[measure.name] as number;
+  const previous = datum[measure.getDerivedName(MeasureDerivation.PREVIOUS)] as number;
+  return <React.Fragment>
+    <span className="measure-previous-value">
+      {measure.formatFn(previous)}
+      </span>
+    <Delta formatter={measure.formatFn}
+           currentValue={current}
+           previousValue={previous}/>
+  </React.Fragment>;
 }
 
-export class VisMeasureLabel extends React.Component<VisMeasureLabelProps, VisMeasureLabelState> {
-  constructor() {
-    super();
-
-  }
-
-  render() {
-    const { measure, datum } = this.props;
-
-    return <div className="vis-measure-label">
-      <span className="measure-title">{measure.title}</span>
-      <span className="colon">: </span>
-      <span className="measure-value">{measure.formatFn(datum[measure.name] as number)}</span>
-    </div>;
-  }
-}
+export const VisMeasureLabel: React.SFC<VisMeasureLabelProps> = ({ measure, datum, showPrevious }) => {
+  return <div className="vis-measure-label">
+    <span className="measure-title">{measure.title}</span>
+    <span className="colon">: </span>
+    <span className="measure-value">{measure.formatDatum(datum)}</span>
+    {showPrevious && renderPrevious(measure, datum)}
+  </div>;
+};

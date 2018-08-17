@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +15,12 @@
  * limitations under the License.
  */
 
-require('./dropdown.css');
-
-import * as React from 'react';
-import * as ReactDOM from 'react-dom';
-import { SvgIcon } from '../svg-icon/svg-icon';
-import { $, Expression, Executor, Dataset } from 'swiv-plywood';
-import { Stage, Essence, DataCube, Filter, Dimension, Measure } from '../../../common/models/index';
-import { isInside, escapeKey, classNames } from '../../utils/dom/dom';
+import * as React from "react";
+import * as ReactDOM from "react-dom";
+import { JSXNode } from "../../../common/utils";
+import { classNames, escapeKey, isInside } from "../../utils/dom/dom";
+import { SvgIcon } from "../svg-icon/svg-icon";
+import "./dropdown.scss";
 
 function simpleEqual(item1: any, item2: any): boolean {
   return item1 === item2;
@@ -34,8 +33,8 @@ export interface DropdownProps<T> {
   menuClassName?: string;
   selectedItem?: T;
   equal?: (item1: T, item2: T) => boolean;
-  renderItem?: (item: T) => (string | JSX.Element);
-  renderSelectedItem?: (item: T) => (string | JSX.Element);
+  renderItem?: (item: T) => JSXNode;
+  renderSelectedItem?: (item: T) => JSXNode;
   keyItem?: (item: T) => string;
   onSelect?: (item: T) => void;
   direction?: string;
@@ -47,15 +46,8 @@ export interface DropdownState {
 
 export class Dropdown<T> extends React.Component<DropdownProps<T>, DropdownState> {
 
-  // Allows usage in TSX :
-  // const MyDropdown = Dropdown.specialize<MyItemClass>();
-  // then : <MyDropdown ... />
-  static specialize<U>() {
-    return Dropdown as { new (): Dropdown<U>; };
-  }
-
-  constructor() {
-    super();
+  constructor(props: DropdownProps<T>) {
+    super(props);
     this.state = {
       open: false
     };
@@ -65,13 +57,13 @@ export class Dropdown<T> extends React.Component<DropdownProps<T>, DropdownState
   }
 
   componentDidMount() {
-    window.addEventListener('mousedown', this.globalMouseDownListener);
-    window.addEventListener('keydown', this.globalKeyDownListener);
+    window.addEventListener("mousedown", this.globalMouseDownListener);
+    window.addEventListener("keydown", this.globalKeyDownListener);
   }
 
   componentWillUnmount() {
-    window.removeEventListener('mousedown', this.globalMouseDownListener);
-    window.removeEventListener('keydown', this.globalKeyDownListener);
+    window.removeEventListener("mousedown", this.globalMouseDownListener);
+    window.removeEventListener("keydown", this.globalKeyDownListener);
   }
 
   onClick() {
@@ -104,9 +96,9 @@ export class Dropdown<T> extends React.Component<DropdownProps<T>, DropdownState
     if (!renderItem) renderItem = String;
     if (!keyItem) keyItem = renderItem as (item: T) => string;
     if (!equal) equal = simpleEqual;
-    var itemElements = items.map((item) => {
+    var itemElements = items.map(item => {
       return <div
-        className={classNames('dropdown-item', equal(item, selectedItem) ? 'selected' : null)}
+        className={classNames("dropdown-item", equal(item, selectedItem) ? "selected" : null)}
         key={keyItem(item)}
         onClick={() => onSelect(item)}
       >
@@ -114,7 +106,7 @@ export class Dropdown<T> extends React.Component<DropdownProps<T>, DropdownState
       </div>;
     });
 
-    return <div className={classNames('dropdown-menu', menuClassName)}>
+    return <div className={classNames("dropdown-menu", menuClassName)}>
       {itemElements}
     </div>;
   }
@@ -123,7 +115,7 @@ export class Dropdown<T> extends React.Component<DropdownProps<T>, DropdownState
     var { label, renderItem, selectedItem, direction, renderSelectedItem, className } = this.props;
     var { open } = this.state;
     if (!renderItem) renderItem = String;
-    if (!direction) direction = 'down';
+    if (!direction) direction = "down";
     if (!renderSelectedItem) renderSelectedItem = renderItem as (item: T) => string;
 
     var labelElement: JSX.Element = null;
@@ -131,12 +123,12 @@ export class Dropdown<T> extends React.Component<DropdownProps<T>, DropdownState
       labelElement = <div className="dropdown-label">{label}</div>;
     }
 
-    return <div className={classNames('dropdown', direction, className)} onClick={this.onClick.bind(this)}>
+    return <div className={classNames("dropdown", direction, className)} onClick={this.onClick.bind(this)}>
       {labelElement}
-      <div className={classNames('selected-item', { active : open })}>{renderSelectedItem(selectedItem)}
-        <SvgIcon className="caret-icon" svg={require('../../icons/dropdown-caret.svg')}/>
+      <div className={classNames("selected-item", { active: open })}>{renderSelectedItem(selectedItem)}
+        <SvgIcon className="caret-icon" svg={require("../../icons/dropdown-caret.svg")} />
       </div>
-      { open ? this.renderMenu() : null }
+      {open ? this.renderMenu() : null}
     </div>;
   }
 }

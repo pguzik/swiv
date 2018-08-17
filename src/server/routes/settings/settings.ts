@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,28 +15,27 @@
  * limitations under the License.
  */
 
-import { Router, Request, Response } from 'express';
-import { AppSettings } from '../../../common/models/index';
-import { MANIFESTS } from '../../../common/manifests/index';
-
-import { SwivRequest } from '../../utils/index';
-import { SETTINGS_MANAGER } from '../../config';
+import { Response, Router } from "express";
+import { MANIFESTS } from "../../../common/manifests/index";
+import { AppSettings } from "../../../common/models/index";
+import { SETTINGS_MANAGER } from "../../config";
+import { SwivRequest } from "../../utils/index";
 
 var router = Router();
 
-router.get('/', (req: SwivRequest, res: Response) => {
+router.get("/", (req: SwivRequest, res: Response) => {
   SETTINGS_MANAGER.getSettings()
     .then(
-      (appSettings) => {
+      appSettings => {
         res.send({ appSettings });
       },
       (e: Error) => {
-        console.log('error:', e.message);
-        if (e.hasOwnProperty('stack')) {
-          console.log((<any>e).stack);
+        console.log("error:", e.message);
+        if (e.hasOwnProperty("stack")) {
+          console.log((<any> e).stack);
         }
         res.status(500).send({
-          error: 'could not compute',
+          error: "could not compute",
           message: e.message
         });
       }
@@ -44,14 +44,14 @@ router.get('/', (req: SwivRequest, res: Response) => {
 
 });
 
-router.post('/', (req: SwivRequest, res: Response) => {
+router.post("/", (req: SwivRequest, res: Response) => {
   var { appSettings } = req.body;
 
   try {
     var appSettingsObject = AppSettings.fromJS(appSettings, { visualizations: MANIFESTS });
   } catch (e) {
     res.status(400).send({
-      error: 'bad settings',
+      error: "bad settings",
       message: e.message
     });
     return;
@@ -60,15 +60,15 @@ router.post('/', (req: SwivRequest, res: Response) => {
   SETTINGS_MANAGER.updateSettings(appSettingsObject)
     .then(
       () => {
-        res.send({ status: 'ok' });
+        res.send({ status: "ok" });
       },
       (e: Error) => {
-        console.log('error:', e.message);
-        if (e.hasOwnProperty('stack')) {
-          console.log((<any>e).stack);
+        console.log("error:", e.message);
+        if (e.hasOwnProperty("stack")) {
+          console.log((<any> e).stack);
         }
         res.status(500).send({
-          error: 'could not compute',
+          error: "could not compute",
           message: e.message
         });
       }

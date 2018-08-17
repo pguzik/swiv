@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +15,12 @@
  * limitations under the License.
  */
 
-import { expect } from 'chai';
-import { testImmutableClass } from 'immutable-class-tester';
-import { Customization, CustomizationJS } from './customization';
+import { expect } from "chai";
+import { testImmutableClass } from "immutable-class-tester";
+import { Customization, CustomizationJS } from "./customization";
 
-var { WallTime } = require('chronoshift');
-if (!WallTime.rules) {
-  var tzData = require("chronoshift/lib/walltime/walltime-data.js");
-  WallTime.init(tzData.rules, tzData.zones);
-}
-
-describe('Customization', () => {
-  it('is an immutable class', () => {
+describe("Customization", () => {
+  it("is an immutable class", () => {
     testImmutableClass<CustomizationJS>(Customization, [
       {
         title: "Hello World",
@@ -42,10 +37,12 @@ describe('Customization', () => {
             title: "corporate dashboard",
             linkGenerator: "{ return 'https://dashboard.corporate.com/'+filter.toString() }",
             sameWindow: true
-          }, {
+          },
+          {
             title: "google docs",
             linkGenerator: "{ return 'http://182.343.32.2273:8080/'+dataCube.name }"
-          }, {
+          },
+          {
             title: "google docs",
             linkGenerator: "{ return 'http://182.343.32.2273:8080/'+timezone.timezone }"
           }
@@ -72,7 +69,7 @@ describe('Customization', () => {
         externalViews: [],
         timezones: ["Pacific/Niue", "Not a timezone"]
       });
-    }).to.throw("Unable to find time zone named Not a timezone");
+    }).to.throw("timezone 'Not a timezone' does not exist");
   });
 
 });

@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +15,11 @@
  * limitations under the License.
  */
 
-import * as React from 'react';
-
 export function mockReactComponent(_class: any) {
   let prototype = _class.prototype;
-  let toUndo: (() => void)[] = [];
+  let toUndo: Array<() => void> = [];
 
-  if (prototype.hasOwnProperty('componentDidMount') === true) {
+  if (prototype.hasOwnProperty("componentDidMount") === true) {
     let oldComponentDidMount = prototype.componentDidMount;
     toUndo.push(() => {
       prototype.componentDidMount = oldComponentDidMount;
@@ -28,13 +27,13 @@ export function mockReactComponent(_class: any) {
     prototype.componentDidMount = () => {};
   }
 
-  if (prototype.hasOwnProperty('render') === true) {
+  if (prototype.hasOwnProperty("render") === true) {
     let oldRender = prototype.render;
     toUndo.push(() => {
       prototype.render = oldRender;
     });
 
-    prototype.render = (): any => { return null; };
+    prototype.render = (): any => null;
   }
 
   _class.restore = function() {

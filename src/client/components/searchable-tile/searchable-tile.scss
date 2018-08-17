@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +32,13 @@ $search-box-height: 26px;
     right: 0;
 
     overflow: auto;
-  }
 
+    .row {
+      &:last-child {
+        margin-bottom: $searchable-tile-last-child-margin;
+      }
+    }
+  }
 
   .search-box {
     position: absolute;
@@ -55,7 +61,6 @@ $search-box-height: 26px;
     }
   }
 
-
   &.has-search .rows {
     top: $pin-title-height + $search-box-height + $search-box-gap;
   }
@@ -66,6 +71,11 @@ $search-box-height: 26px;
 
   &.continuous .rows .row {
     pointer-events: none;
+  }
+
+
+  .hidden {
+    display: none;
   }
 
   .message {

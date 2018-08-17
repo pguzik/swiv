@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,22 +15,20 @@
  * limitations under the License.
  */
 
-require('./pinboard-panel.css');
+import { SortExpression } from "plywood";
+import * as React from "react";
+import { Clicker, Colors, Essence, SortOn, Timekeeper, VisStrategy } from "../../../common/models/index";
+import { STRINGS } from "../../config/constants";
+import { DragManager } from "../../utils/drag-manager/drag-manager";
+import { DimensionTile } from "../dimension-tile/dimension-tile";
+import { PinboardMeasureTile } from "../pinboard-measure-tile/pinboard-measure-tile";
+import { SvgIcon } from "../svg-icon/svg-icon";
+import "./pinboard-panel.scss";
 
-import * as React from 'react';
-import { $, Expression, SortAction } from 'swiv-plywood';
-import { STRINGS } from '../../config/constants';
-import { SvgIcon } from '../svg-icon/svg-icon';
-import { Clicker, Essence, Timekeeper, SortOn, VisStrategy, Colors } from '../../../common/models/index';
-import { DragManager } from '../../utils/drag-manager/drag-manager';
-import { PinboardMeasureTile } from '../pinboard-measure-tile/pinboard-measure-tile';
-import { DimensionTile } from '../dimension-tile/dimension-tile';
-
-export interface PinboardPanelProps extends React.Props<any> {
+export interface PinboardPanelProps {
   clicker: Clicker;
   essence: Essence;
   timekeeper: Timekeeper;
-  getUrlPrefix?: () => string;
   style?: React.CSSProperties;
 }
 
@@ -39,8 +38,8 @@ export interface PinboardPanelState {
 
 export class PinboardPanel extends React.Component<PinboardPanelProps, PinboardPanelState> {
 
-  constructor() {
-    super();
+  constructor(props: PinboardPanelProps) {
+    super(props);
     this.state = {
       dragOver: false
     };
@@ -63,7 +62,7 @@ export class PinboardPanel extends React.Component<PinboardPanelProps, PinboardP
 
   dragOver(e: DragEvent) {
     if (!this.canDrop(e)) return;
-    e.dataTransfer.dropEffect = 'move';
+    e.dataTransfer.dropEffect = "move";
     e.preventDefault();
   }
 
@@ -90,7 +89,7 @@ export class PinboardPanel extends React.Component<PinboardPanelProps, PinboardP
       if (dimension) {
         var split = splits.findSplitForDimension(dimension);
         if (split) {
-          return SortOn.fromSortAction(split.sortAction, dataCube, dimension);
+          return SortOn.fromSortExpression(split.sortAction, dataCube, dimension);
         }
       }
     }
@@ -106,8 +105,8 @@ export class PinboardPanel extends React.Component<PinboardPanelProps, PinboardP
         var split = splits.findSplitForDimension(dimension);
         if (split) {
           var sortAction = split.sortAction;
-          var direction = sortAction ? sortAction.direction : SortAction.DESCENDING;
-          var newSplit = split.changeSortAction(new SortAction({
+          var direction = sortAction ? sortAction.direction : SortExpression.DESCENDING;
+          var newSplit = split.changeSortExpression(new SortExpression({
             expression: sortOn.getExpression(),
             direction
           }));
@@ -140,7 +139,7 @@ export class PinboardPanel extends React.Component<PinboardPanelProps, PinboardP
   }
 
   render() {
-    var { clicker, essence, timekeeper, getUrlPrefix, style } = this.props;
+    var { clicker, essence, timekeeper, style } = this.props;
     var { dragOver } = this.state;
     var { dataCube, pinnedDimensions, colors } = essence;
 
@@ -149,9 +148,8 @@ export class PinboardPanel extends React.Component<PinboardPanelProps, PinboardP
     var colorDimension = colors ? colors.dimension : null;
     if (colorDimension) {
       var dimension = dataCube.getDimension(colorDimension);
-      if (dimension) {
-        var colorsSortOn = this.getColorsSortOn();
-
+      var colorsSortOn = this.getColorsSortOn();
+      if (dimension && colorsSortOn) {
         legendMeasureSelector = <PinboardMeasureTile
           essence={essence}
           title="Legend"
@@ -168,14 +166,13 @@ export class PinboardPanel extends React.Component<PinboardPanelProps, PinboardP
           sortOn={colorsSortOn}
           colors={colors}
           onClose={this.onRemoveLegend.bind(this)}
-          getUrlPrefix={getUrlPrefix}
         />;
       }
     }
 
     var pinnedSortSortOn = SortOn.fromMeasure(essence.getPinnedSortMeasure());
     var dimensionTiles: JSX.Element[] = [];
-    pinnedDimensions.forEach((dimensionName) => {
+    pinnedDimensions.forEach(dimensionName => {
       var dimension = dataCube.getDimension(dimensionName);
       if (!dimension) return null;
 
@@ -187,14 +184,13 @@ export class PinboardPanel extends React.Component<PinboardPanelProps, PinboardP
         dimension={dimension}
         sortOn={pinnedSortSortOn}
         onClose={clicker.unpin ? clicker.unpin.bind(clicker, dimension) : null}
-        getUrlPrefix={getUrlPrefix}
       />);
     });
 
     var placeholder: JSX.Element = null;
     if (!dragOver && !dimensionTiles.length) {
       placeholder = <div className="placeholder">
-        <SvgIcon svg={require('../../icons/preview-pin.svg')}/>
+        <SvgIcon svg={require("../../icons/preview-pin.svg")} />
         <div className="placeholder-message">{STRINGS.pinboardPlaceholder}</div>
       </div>;
     }
@@ -213,7 +209,7 @@ export class PinboardPanel extends React.Component<PinboardPanelProps, PinboardP
         onSelect={this.onPinboardSortOnSelect.bind(this)}
       />
       {dimensionTiles}
-      {dragOver ? <div className="drop-indicator-tile"/> : null}
+      {dragOver ? <div className="drop-indicator-tile" /> : null}
       {placeholder}
       {dragOver ? <div
         className="drag-mask"

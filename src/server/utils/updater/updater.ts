@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +15,13 @@
  * limitations under the License.
  */
 
-import { immutableEqual, Equalable } from 'immutable-class';
-import { hasOwnProperty } from '../../../common/utils/general/general';
+import { Equalable, immutableEqual } from "immutable-class";
+import { noop } from "../../../common/utils/functional/functional";
+import { hasOwnProperty } from "../../../common/utils/general/general";
 
 function getName(thing: any): string {
   return thing.name;
 }
-
-function noop() {}
 
 export interface UpdatedOptions<T> {
   key?: (thing: T, index?: number) => string;
@@ -38,16 +38,14 @@ export function updater<T extends Equalable>(oldThings: T[], newThings: T[], upd
   const onUpdate = updatedOptions.onUpdate || noop;
   const onExit = updatedOptions.onExit || noop;
 
-  var initialByKey: Lookup<T> = {};
-  for (var i = 0; i < oldThings.length; i++) {
-    var initialThing = oldThings[i];
+  var initialByKey: Record<string, T> = {};
+  for (const initialThing of oldThings) {
     var initialThingKey = key(initialThing);
     if (initialByKey[initialThingKey]) throw new Error(`duplicate key '${initialThingKey}'`);
     initialByKey[initialThingKey] = initialThing;
   }
 
-  for (var j = 0; j < newThings.length; j++) {
-    var newThing = newThings[j];
+  for (const newThing of newThings) {
     var newThingKey = key(newThing);
     var oldThing = initialByKey[newThingKey];
     if (oldThing) {

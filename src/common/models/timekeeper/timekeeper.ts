@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +15,8 @@
  * limitations under the License.
  */
 
-import { BaseImmutable, Property, isInstanceOf } from 'immutable-class';
-import { findByName, overrideByName } from 'swiv-plywood';
-import { TimeTag, TimeTagJS } from '../time-tag/time-tag';
+import { BaseImmutable, NamedArray, Property, PropertyType } from "immutable-class";
+import { TimeTag, TimeTagJS } from "../time-tag/time-tag";
 
 // I am: export * from './timekeeper/timekeeper';
 
@@ -34,7 +34,7 @@ export class Timekeeper extends BaseImmutable<TimekeeperValue, TimekeeperJS> {
   static EMPTY: Timekeeper;
 
   static isTimekeeper(candidate: any): candidate is Timekeeper {
-    return isInstanceOf(candidate, Timekeeper);
+    return candidate instanceof Timekeeper;
   }
 
   static globalNow(): Date {
@@ -46,8 +46,8 @@ export class Timekeeper extends BaseImmutable<TimekeeperValue, TimekeeperJS> {
   }
 
   static PROPERTIES: Property[] = [
-    { name: 'timeTags', immutableClassArray: TimeTag },
-    { name: 'nowOverride', isDate: true, defaultValue: null }
+    { name: "timeTags", type: PropertyType.ARRAY, immutableClassArray: TimeTag },
+    { name: "nowOverride", type: PropertyType.DATE, defaultValue: null }
   ];
 
   public timeTags: TimeTag[];
@@ -62,16 +62,16 @@ export class Timekeeper extends BaseImmutable<TimekeeperValue, TimekeeperJS> {
   }
 
   getTime(name: string): Date {
-    var timeTag = findByName(this.timeTags, name);
-    if (!timeTag || timeTag.special === 'realtime') return this.now();
+    var timeTag = NamedArray.findByName(this.timeTags, name);
+    if (!timeTag || timeTag.special === "realtime") return this.now();
     return timeTag.time || this.now();
   }
 
   updateTime(name: string, time: Date): Timekeeper {
     var value = this.valueOf();
-    var tag = findByName(value.timeTags, name);
+    var tag = NamedArray.findByName(value.timeTags, name);
     if (!tag) return this;
-    value.timeTags = overrideByName(value.timeTags, tag.changeTime(time, this.now()));
+    value.timeTags = NamedArray.overrideByName(value.timeTags, tag.changeTime(time, this.now()));
     return new Timekeeper(value);
   }
 
@@ -83,10 +83,11 @@ export class Timekeeper extends BaseImmutable<TimekeeperValue, TimekeeperJS> {
 
   removeTimeTagFor(name: string): Timekeeper {
     var value = this.valueOf();
-    value.timeTags = value.timeTags.filter((tag) => tag.name !== name);
+    value.timeTags = value.timeTags.filter(tag => tag.name !== name);
     return new Timekeeper(value);
   }
 
 }
+
 BaseImmutable.finalize(Timekeeper);
 Timekeeper.EMPTY = new Timekeeper({ timeTags: [] });

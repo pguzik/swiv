@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,42 +15,40 @@
  * limitations under the License.
  */
 
-import { expect } from 'chai';
-import { testImmutableClass } from 'immutable-class-tester';
+import { testImmutableClass } from "immutable-class-tester";
 
-import { $, Expression } from 'swiv-plywood';
-import { SplitCombine, SplitCombineJS } from './split-combine';
+import { SplitCombine, SplitCombineJS } from "./split-combine";
 
-describe('SplitCombine', () => {
-  it('is an immutable class', () => {
+describe("SplitCombine", () => {
+  it("is an immutable class", () => {
     testImmutableClass<SplitCombineJS>(SplitCombine, [
       {
-        expression: { op: 'ref', name: 'language' }
+        expression: { op: "ref", name: "language" }
       },
       {
-        expression: { op: 'ref', name: 'lookup' }
+        expression: { op: "ref", name: "lookup" }
       },
       {
-        expression: { op: 'ref', name: 'time' },
+        expression: { op: "ref", name: "time" },
         bucketAction: {
-          action: 'in',
+          op: "in",
           expression: {
-            'op': 'literal',
-            'value': { 'setType': 'STRING', 'elements': ['he'] },
-            'type': 'SET'
+            op: "literal",
+            value: { setType: "STRING", elements: ["he"] },
+            type: "SET"
           }
         },
         sortAction: {
-          action: 'sort',
-          direction: 'ascending',
+          op: "sort",
+          direction: "ascending",
           expression: {
-            op: 'ref',
-            name: 'time'
+            op: "ref",
+            name: "time"
           }
         },
         limitAction: {
-          action: 'limit',
-          limit: 2
+          op: "limit",
+          value: 2
         }
       }
     ]);

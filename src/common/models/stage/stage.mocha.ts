@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +15,17 @@
  * limitations under the License.
  */
 
-import { expect } from 'chai';
-import { testImmutableClass } from 'immutable-class-tester';
+import { testImmutableClass } from "immutable-class-tester";
 
-import { $, Expression } from 'swiv-plywood';
-import { Stage, StageJS } from './stage';
-import { StageMock } from './stage.mock';
+import { Stage, StageJS } from "./stage";
+import { StageFixtures } from "./stage.fixtures";
 
-describe('Stage', () => {
-  it('is an immutable class', () => {
+describe("Stage", () => {
+  it("is an immutable class", () => {
     testImmutableClass<StageJS>(Stage, [
-      StageMock.DEFAULT_A_JS,
-      StageMock.DEFAULT_B_JS,
-      StageMock.DEFAULT_C_JS
+      StageFixtures.DEFAULT_A_JS,
+      StageFixtures.DEFAULT_B_JS,
+      StageFixtures.DEFAULT_C_JS
     ]);
   });
 

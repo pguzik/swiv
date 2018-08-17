@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +15,16 @@
  * limitations under the License.
  */
 
-require('./totals.css');
-
-import * as React from 'react';
-import { $, ply, Expression, Executor, Dataset } from 'swiv-plywood';
-import { TOTALS_MANIFEST } from '../../../common/manifests/totals/totals';
-import { Stage, Essence, Timekeeper, VisualizationProps, DatasetLoad } from '../../../common/models/index';
-
-import { BaseVisualization, BaseVisualizationState } from '../base-visualization/base-visualization';
-
-const PADDING_H = 60;
-const TOTAL_WIDTH = 176;
+import { Iterable } from "immutable";
+import * as React from "react";
+import { TOTALS_MANIFEST } from "../../../common/manifests/totals/totals";
+import { DatasetLoad, MeasureDerivation, VisualizationProps } from "../../../common/models/index";
+import { BaseVisualization, BaseVisualizationState } from "../base-visualization/base-visualization";
+import { Total } from "./total";
+import "./totals.scss";
 
 export class Totals extends BaseVisualization<BaseVisualizationState> {
   public static id = TOTALS_MANIFEST.name;
-
-  constructor() {
-    super();
-  }
 
   componentWillMount() {
     this.precalculate(this.props);
@@ -39,45 +32,31 @@ export class Totals extends BaseVisualization<BaseVisualizationState> {
 
   componentDidMount() {
     this._isMounted = true;
-    var { essence, timekeeper } = this.props;
+    const { essence, timekeeper } = this.props;
     this.fetchData(essence, timekeeper);
   }
 
-  componentWillReceiveProps(nextProps: VisualizationProps) {
-    this.precalculate(nextProps);
-    var { essence, timekeeper } = this.props;
-    var nextEssence = nextProps.essence;
-    var nextTimekeeper = nextProps.timekeeper;
-    if (
-      nextEssence.differentDataCube(essence) ||
+  shouldFetchData(nextProps: VisualizationProps): boolean {
+    const { essence, timekeeper } = this.props;
+    const nextEssence = nextProps.essence;
+    const nextTimekeeper = nextProps.timekeeper;
+    return nextEssence.differentDataCube(essence) ||
       nextEssence.differentEffectiveFilter(essence, timekeeper, nextTimekeeper, Totals.id) ||
-      nextEssence.newEffectiveMeasures(essence)
-    ) {
-      this.fetchData(nextEssence, nextTimekeeper);
-    }
+      nextEssence.differentTimeShift(essence) ||
+      nextEssence.newEffectiveMeasures(essence) ||
+      nextEssence.dataCube.refreshRule.isRealtime();
   }
 
   componentWillUnmount() {
     this._isMounted = false;
   }
 
-  makeQuery(essence: Essence, timekeeper: Timekeeper): Expression {
-    var query = ply()
-      .apply('main', $('main').filter(essence.getEffectiveFilter(timekeeper, Totals.id).toExpression()));
-
-    essence.getEffectiveMeasures().forEach((measure) => {
-      query = query.performAction(measure.toApplyAction());
-    });
-
-    return query;
-  }
-
   precalculate(props: VisualizationProps, datasetLoad: DatasetLoad = null) {
     const { registerDownloadableDataset, essence } = props;
     const { splits } = essence;
 
-    var existingDatasetLoad = this.state.datasetLoad;
-    var newState: BaseVisualizationState = {};
+    const existingDatasetLoad = this.state.datasetLoad;
+    const newState: BaseVisualizationState = {};
     if (datasetLoad) {
       // Always keep the old dataset while loading
       if (datasetLoad.loading) datasetLoad.dataset = existingDatasetLoad.dataset;
@@ -87,51 +66,48 @@ export class Totals extends BaseVisualization<BaseVisualizationState> {
       datasetLoad = existingDatasetLoad;
     }
 
-    var { dataset } = datasetLoad;
-    if (dataset && splits.length()) {
+    const { dataset } = datasetLoad;
+    if (dataset) {
       if (registerDownloadableDataset) registerDownloadableDataset(dataset);
     }
 
     this.setState(newState);
   }
 
-  renderInternals() {
-    var { essence, stage } = this.props;
-    var { datasetLoad } = this.state;
-
-    var myDatum = datasetLoad.dataset ? datasetLoad.dataset.data[0] : null;
-    var measures = essence.getEffectiveMeasures();
-    var single = measures.size === 1;
-
-    var totals = measures.map(measure => {
-      var measureValueStr = '-';
-      if (myDatum) {
-        measureValueStr = measure.formatDatum(myDatum);
-      }
-
-      return <div
-        className={'total' + (single ? ' single' : '')}
-        key={measure.name}
-      >
-        <div className="measure-name">{measure.title}</div>
-        <div className="measure-value">{measureValueStr}</div>
-      </div>;
-    });
-
-    var totalContainerStyle: React.CSSProperties = null;
-    if (!single) {
-      var numColumns = Math.min(totals.size, Math.max(1, Math.floor((stage.width - 2 * PADDING_H) / TOTAL_WIDTH)));
-      var containerWidth = numColumns * TOTAL_WIDTH;
-      totalContainerStyle = {
-        left: '50%',
-        width: containerWidth,
-        marginLeft: -containerWidth / 2
-      };
+  renderTotals(): Iterable<number, JSX.Element> {
+    const { essence } = this.props;
+    const { datasetLoad: { dataset } } = this.state;
+    const measures = essence.getEffectiveMeasures();
+    const datum = dataset ? dataset.data[0] : null;
+    if (!datum) {
+      return measures.map(measure => {
+        return <Total
+          key={measure.name}
+          formatter={measure.formatFn}
+          name={measure.title}
+          value={null}/>;
+      });
     }
 
+    return measures.map(measure => {
+      const currentValue = datum[measure.name] as number;
+      const previousValue = essence.hasComparison() && datum[measure.getDerivedName(MeasureDerivation.PREVIOUS)] as number;
+
+      return <Total
+        key={measure.name}
+        name={measure.title}
+        value={currentValue}
+        previous={previousValue}
+        formatter={measure.formatFn}
+      />;
+    });
+
+  }
+
+  renderInternals() {
     return <div className="internals">
-      <div className="total-container" style={totalContainerStyle}>
-        {totals}
+      <div className="total-container">
+        {this.renderTotals()}
       </div>
     </div>;
   }

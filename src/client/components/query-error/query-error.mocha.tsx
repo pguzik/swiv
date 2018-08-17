@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,28 +15,23 @@
  * limitations under the License.
  */
 
-import { expect } from 'chai';
-import * as sinon from 'sinon';
-import * as React from 'react';
-import * as ReactDOM from 'react-dom';
+import { expect } from "chai";
+import * as React from "react";
+import * as ReactDOM from "react-dom";
+import * as TestUtils from "react-dom/test-utils";
+import { renderIntoDocument } from "../../utils/test-utils";
+import { QueryError } from "./query-error";
 
-import '../../utils/test-utils/index';
-
-import * as TestUtils from 'react-addons-test-utils';
-
-import { $, Expression } from 'swiv-plywood';
-import { QueryError } from './query-error';
-
-describe('QueryError', () => {
-  it('adds the correct class', () => {
-    var renderedComponent = TestUtils.renderIntoDocument(
+describe("QueryError", () => {
+  it("adds the correct class", () => {
+    var renderedComponent = renderIntoDocument(
       <QueryError
         error="This is a bad query!"
       />
     );
 
-    expect(TestUtils.isCompositeComponent(renderedComponent), 'should be composite').to.equal(true);
-    expect((ReactDOM.findDOMNode(renderedComponent) as any).className, 'should contain class').to.contain('query-error');
+    expect(TestUtils.isCompositeComponent(renderedComponent), "should be composite").to.equal(true);
+    expect(ReactDOM.findDOMNode(renderedComponent).className, "should contain class").to.contain("query-error");
   });
 
 });

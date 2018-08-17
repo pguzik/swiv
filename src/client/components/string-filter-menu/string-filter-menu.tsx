@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +15,17 @@
  * limitations under the License.
  */
 
-require('./string-filter-menu.css');
-
-import * as React from 'react';
-import { Fn } from '../../../common/utils/general/general';
-import { Stage, Clicker, Essence, Timekeeper, Filter, FilterMode, Dimension, DragPosition, FilterClause } from '../../../common/models/index';
-
+import * as React from "react";
+import { Clicker, Dimension, DragPosition, Essence, Filter, FilterClause, FilterMode, Stage, Timekeeper } from "../../../common/models/index";
+import { Fn } from "../../../common/utils/general/general";
 import { BubbleMenu } from "../bubble-menu/bubble-menu";
-import { PreviewStringFilterMenu } from '../preview-string-filter-menu/preview-string-filter-menu';
-import { SelectableStringFilterMenu  } from '../selectable-string-filter-menu/selectable-string-filter-menu';
 import { ClearableInput } from "../clearable-input/clearable-input";
-import { FilterOptionsDropdown, FilterOption } from "../filter-options-dropdown/filter-options-dropdown";
+import { FilterOption, FilterOptionsDropdown } from "../filter-options-dropdown/filter-options-dropdown";
+import { PreviewStringFilterMenu } from "../preview-string-filter-menu/preview-string-filter-menu";
+import { SelectableStringFilterMenu } from "../selectable-string-filter-menu/selectable-string-filter-menu";
+import "./string-filter-menu.scss";
 
-export interface StringFilterMenuProps extends React.Props<any> {
+export interface StringFilterMenuProps {
   clicker: Clicker;
   dimension: Dimension;
   essence: Essence;
@@ -47,8 +46,8 @@ export interface StringFilterMenuState {
 export class StringFilterMenu extends React.Component<StringFilterMenuProps, StringFilterMenuState> {
   public mounted: boolean;
 
-  constructor() {
-    super();
+  constructor(props: StringFilterMenuProps) {
+    super(props);
     this.state = {
       filterMode: null,
       searchText: null
@@ -61,18 +60,18 @@ export class StringFilterMenu extends React.Component<StringFilterMenuProps, Str
 
     var filterMode = essence.filter.getModeForDimension(dimension);
     if (filterMode && !this.state.filterMode) {
-      this.setState({filterMode});
+      this.setState({ filterMode });
     } else if (colors) {
-      this.setState({filterMode: Filter.INCLUDED});
+      this.setState({ filterMode: Filter.INCLUDED });
     }
   }
 
   onSelectFilterOption(filterMode: FilterMode) {
-    this.setState({filterMode});
+    this.setState({ filterMode });
   }
 
   updateSearchText(searchText: string) {
-    this.setState({searchText});
+    this.setState({ searchText });
   }
 
   updateFilter(clause: FilterClause): Filter {
@@ -96,7 +95,7 @@ export class StringFilterMenu extends React.Component<StringFilterMenuProps, Str
     const dimensionKind = dimension.kind;
 
     var filterOptions: FilterOption[] = FilterOptionsDropdown.getFilterOptions(Filter.INCLUDED, Filter.EXCLUDED);
-    if (dimensionKind !== 'boolean') filterOptions = filterOptions.concat(FilterOptionsDropdown.getFilterOptions(Filter.REGEX, Filter.CONTAINS));
+    if (dimensionKind !== "boolean") filterOptions = filterOptions.concat(FilterOptionsDropdown.getFilterOptions(Filter.REGEX, Filter.CONTAINS));
 
     return filterOptions;
   }

@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +15,20 @@
  * limitations under the License.
  */
 
-require('./dimension-actions-menu.css');
-
-import * as React from 'react';
-import { Fn } from '../../../common/utils/general/general';
-import { SvgIcon } from '../svg-icon/svg-icon';
-import { STRINGS } from '../../config/constants';
-import { Stage, Clicker, Essence, VisStrategy, DataCube, Filter, Dimension, Measure, SplitCombine } from '../../../common/models/index';
-import { BubbleMenu } from '../bubble-menu/bubble-menu';
+import * as React from "react";
+import { Clicker, Dimension, Essence, SplitCombine, Stage, VisStrategy } from "../../../common/models";
+import { Fn } from "../../../common/utils/general/general";
+import { STRINGS } from "../../config/constants";
+import { BubbleMenu, Direction } from "../bubble-menu/bubble-menu";
+import { SvgIcon } from "../svg-icon/svg-icon";
+import "./dimension-actions-menu.scss";
 
 const ACTION_SIZE = 60;
 
-export interface DimensionActionsMenuProps extends React.Props<any> {
+export interface DimensionActionsMenuProps {
   clicker: Clicker;
   essence: Essence;
-  direction: string;
+  direction: Direction;
   containerStage: Stage;
   openOn: Element;
   dimension: Dimension;
@@ -42,10 +42,6 @@ export interface DimensionActionsMenuState {
 
 export class DimensionActionsMenu extends React.Component<DimensionActionsMenuProps, DimensionActionsMenuState> {
 
-  constructor() {
-    super();
-  }
-
   onFilter(): void {
     var { dimension, triggerFilterMenu, onClose } = this.props;
     triggerFilterMenu(dimension);
@@ -57,7 +53,7 @@ export class DimensionActionsMenu extends React.Component<DimensionActionsMenuPr
     if (essence.splits.hasSplitOn(dimension) && essence.splits.length() === 1) {
       triggerSplitMenu(dimension);
     } else {
-      clicker.changeSplit(SplitCombine.fromExpression(dimension.expression), VisStrategy.UnfairGame);
+      clicker.changeSplit(SplitCombine.fromExpression(dimension.expression), VisStrategy.FairGame);
     }
     onClose();
   }
@@ -67,7 +63,7 @@ export class DimensionActionsMenu extends React.Component<DimensionActionsMenuPr
     if (essence.splits.hasSplitOn(dimension)) {
       triggerSplitMenu(dimension);
     } else {
-      clicker.addSplit(SplitCombine.fromExpression(dimension.expression), VisStrategy.UnfairGame);
+      clicker.addSplit(SplitCombine.fromExpression(dimension.expression), VisStrategy.FairGame);
     }
     onClose();
   }
@@ -93,19 +89,19 @@ export class DimensionActionsMenu extends React.Component<DimensionActionsMenuPr
       onClose={onClose}
     >
       <div className="filter action" onClick={this.onFilter.bind(this)}>
-        <SvgIcon svg={require('../../icons/preview-filter.svg')}/>
+        <SvgIcon svg={require("../../icons/preview-filter.svg")} />
         <div className="action-label">{STRINGS.filter}</div>
       </div>
       <div className="pin action" onClick={this.onPin.bind(this)}>
-        <SvgIcon svg={require('../../icons/preview-pin.svg')}/>
+        <SvgIcon svg={require("../../icons/preview-pin.svg")} />
         <div className="action-label">{STRINGS.pin}</div>
       </div>
       <div className="split action" onClick={this.onSplit.bind(this)}>
-        <SvgIcon svg={require('../../icons/preview-split.svg')}/>
+        <SvgIcon svg={require("../../icons/preview-split.svg")} />
         <div className="action-label">{STRINGS.split}</div>
       </div>
       <div className="subsplit action" onClick={this.onSubsplit.bind(this)}>
-        <SvgIcon svg={require('../../icons/preview-subsplit.svg')}/>
+        <SvgIcon svg={require("../../icons/preview-subsplit.svg")} />
         <div className="action-label">{STRINGS.subsplit}</div>
       </div>
     </BubbleMenu>;

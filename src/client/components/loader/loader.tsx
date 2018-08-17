@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,26 +15,21 @@
  * limitations under the License.
  */
 
-require('./loader.css');
+import * as React from "react";
+import { SvgIcon } from "../svg-icon/svg-icon";
+import "./loader.scss";
 
-import * as React from 'react';
-import { SvgIcon } from '../svg-icon/svg-icon';
-
-export interface LoaderProps extends React.Props<any> {
+export interface LoaderProps {
 }
 
 export interface LoaderState {
 }
 
 export class Loader extends React.Component<LoaderProps, LoaderState> {
-  constructor() {
-    super();
-
-  }
 
   render() {
     return <div className="loader">
-      <SvgIcon svg={require('../../icons/grid-loader.svg')}/>
+      <SvgIcon svg={require("../../icons/grid-loader.svg")} />
     </div>;
   }
 }

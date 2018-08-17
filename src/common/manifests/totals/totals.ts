@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +15,20 @@
  * limitations under the License.
  */
 
-import { Splits, DataCube, SplitCombine, Colors, Dimension } from '../../models/index';
-import { Manifest, Resolve } from '../../models/manifest/manifest';
+import { Manifest, Resolve } from "../../models/manifest/manifest";
+import { Splits } from "../../models/splits/splits";
+import { Predicates } from "../../utils/rules/predicates";
+import { visualizationDependentEvaluatorBuilder } from "../../utils/rules/visualization-dependent-evaluator";
 
-function handleCircumstance(dataCube: DataCube, splits: Splits, colors: Colors, current: boolean): Resolve {
-  if (!splits.length()) return Resolve.ready(10);
-  return Resolve.automatic(3, { splits: Splits.EMPTY });
-}
+const rulesEvaluator = visualizationDependentEvaluatorBuilder
+  .when(Predicates.noSplits())
+  .then(() => Resolve.ready(10))
+  .otherwise(() => Resolve.automatic(3, { splits: Splits.EMPTY }))
+  .build();
 
 export const TOTALS_MANIFEST = new Manifest(
-  'totals',
-  'Totals',
-  handleCircumstance,
-  'multi'
+  "totals",
+  "Totals",
+  rulesEvaluator,
+  "multi"
 );

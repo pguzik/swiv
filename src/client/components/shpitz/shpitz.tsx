@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +15,11 @@
  * limitations under the License.
  */
 
-require('./shpitz.css');
+import * as React from "react";
+import { classNames } from "../../utils/dom/dom";
+import "./shpitz.scss";
 
-import * as React from 'react';
-import { classNames } from '../../utils/dom/dom';
-
-export interface ShpitzProps extends React.Props<any> {
+export interface ShpitzProps {
   direction: string;
   style?: any;
 }
@@ -29,15 +29,10 @@ export interface ShpitzState {
 
 export class Shpitz extends React.Component<ShpitzProps, ShpitzState> {
 
-  constructor() {
-    super();
-
-  }
-
   render() {
     const { direction, style } = this.props;
 
-    return <div className={classNames('shpitz', direction)} style={style}>
+    return <div className={classNames("shpitz", direction)} style={style}>
       <div className="rectangle"></div>
     </div>;
   }

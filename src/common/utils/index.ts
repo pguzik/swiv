@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +15,9 @@
  * limitations under the License.
  */
 
-export * from './object/object';
-export * from './formatter/formatter';
-export * from './general/general';
-export * from './parser/parser';
-export * from './time/time';
-export * from './immutable-utils/immutable-utils';
-export * from './yaml-helper/yaml-helper';
+export * from "./object/object";
+export * from "./formatter/formatter";
+export * from "./general/general";
+export * from "./parser/parser";
+export * from "./time/time";
+export * from "./immutable-utils/immutable-utils";

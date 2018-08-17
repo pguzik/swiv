@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +15,10 @@
  * limitations under the License.
  */
 
-import { $, retryRequesterFactory, verboseRequesterFactory, concurrentLimitRequesterFactory } from 'swiv-plywood';
-import { druidRequesterFactory, DruidRequestDecorator } from 'plywood-druid-requester';
-import { mySqlRequesterFactory } from 'plywood-mysql-requester';
-import { postgresRequesterFactory } from 'plywood-postgres-requester';
-import { SupportedType } from '../../../common/models/index';
+import { concurrentLimitRequesterFactory, retryRequesterFactory, verboseRequesterFactory } from "plywood";
+import { PlywoodRequester } from "plywood-base-api";
+import { DruidRequestDecorator, druidRequesterFactory, Protocol } from "plywood-druid-requester";
+import { SupportedType } from "../../../common/models/index";
 
 export interface ProperRequesterOptions {
   type: SupportedType;
@@ -30,6 +30,7 @@ export interface ProperRequesterOptions {
 
   // Specific to type 'druid'
   druidRequestDecorator?: DruidRequestDecorator;
+  protocol?: Protocol;
 
   // Specific to SQL drivers
   database?: string;
@@ -37,7 +38,7 @@ export interface ProperRequesterOptions {
   password?: string;
 }
 
-export function properRequesterFactory(options: ProperRequesterOptions): Requester.PlywoodRequester<any> {
+export function properRequesterFactory(options: ProperRequesterOptions): PlywoodRequester<any> {
   var {
     type,
     host,
@@ -47,43 +48,25 @@ export function properRequesterFactory(options: ProperRequesterOptions): Request
     concurrentLimit
   } = options;
 
-  var requester: Requester.PlywoodRequester<any>;
+  var requester: PlywoodRequester<any>;
 
   switch (type) {
-    case 'druid':
+    case "druid":
       requester = druidRequesterFactory({
         host,
         timeout: timeout || 30000,
-        requestDecorator: options.druidRequestDecorator
+        requestDecorator: options.druidRequestDecorator,
+        protocol: options.protocol
       });
       break;
-
-    case 'mysql':
-      requester = mySqlRequesterFactory({
-        host,
-        database: options.database,
-        user: options.user,
-        password: options.password
-      });
-      break;
-
-    case 'postgres':
-      requester = postgresRequesterFactory({
-        host,
-        database: options.database,
-        user: options.user,
-        password: options.password
-      });
-      break;
-
     default:
       throw new Error(`unknown requester type ${type}`);
   }
 
   if (retry) {
     requester = retryRequesterFactory({
-      requester: requester,
-      retry: retry,
+      requester,
+      retry,
       delay: 500,
       retryOnTimeout: false
     });
@@ -91,14 +74,14 @@ export function properRequesterFactory(options: ProperRequesterOptions): Request
 
   if (verbose) {
     requester = verboseRequesterFactory({
-      requester: requester
+      requester
     });
   }
 
   if (concurrentLimit) {
     requester = concurrentLimitRequesterFactory({
-      requester: requester,
-      concurrentLimit: concurrentLimit
+      requester,
+      concurrentLimit
     });
   }
 

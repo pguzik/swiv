@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +15,16 @@
  * limitations under the License.
  */
 
-import { Manifest } from '../models/manifest/manifest';
+import { Manifest } from "../models/manifest/manifest";
 
-import { TOTALS_MANIFEST } from './totals/totals';
-import { TABLE_MANIFEST } from './table/table';
-import { LINE_CHART_MANIFEST } from './line-chart/line-chart';
-import { BAR_CHART_MANIFEST } from './bar-chart/bar-chart';
-import { GEO_MANIFEST } from './geo/geo';
+import { BAR_CHART_MANIFEST } from "./bar-chart/bar-chart";
+import { LINE_CHART_MANIFEST } from "./line-chart/line-chart";
+import { TABLE_MANIFEST } from "./table/table";
+import { TOTALS_MANIFEST } from "./totals/totals";
 
 export const MANIFESTS: Manifest[] = [
   TOTALS_MANIFEST,
   TABLE_MANIFEST,
   LINE_CHART_MANIFEST,
-  BAR_CHART_MANIFEST,
-  GEO_MANIFEST
+  BAR_CHART_MANIFEST
 ];

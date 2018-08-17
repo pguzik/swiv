@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +15,7 @@
  * limitations under the License.
  */
 
-import * as Qajax from 'qajax';
+import * as Qajax from "qajax";
 
 export function addErrorMonitor() {
   var originalOnError = window.onerror;
@@ -31,13 +32,13 @@ export function addErrorMonitor() {
     };
 
     if (typeof console !== "undefined") {
-      console.log('An error has occurred. Please include the below information in the issue:');
+      console.log("An error has occurred. Please include the below information in the issue:");
       console.log(JSON.stringify(err));
     }
 
     Qajax({
       method: "POST",
-      url: 'error',
+      url: "error",
       data: err
     });
 

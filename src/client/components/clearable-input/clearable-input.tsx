@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,27 +15,23 @@
  * limitations under the License.
  */
 
-require('./clearable-input.css');
+import * as React from "react";
+import { SvgIcon } from "../svg-icon/svg-icon";
+import "./clearable-input.scss";
 
-import * as React from 'react';
-import * as ReactDOM from 'react-dom';
-import { $, Expression, Executor, Dataset } from 'swiv-plywood';
-import { Stage, Essence, DataCube, Filter, Dimension, Measure } from '../../../common/models/index';
-import { SvgIcon } from '../svg-icon/svg-icon';
-
-function focusOnInput(component: React.DOMComponent<React.HTMLAttributes>): void {
+function focusOnInput(component: HTMLInputElement): any {
   if (!component) return;
   (component as any).focus();
 }
 
-export interface ClearableInputProps extends React.Props<any> {
+export interface ClearableInputProps {
   className?: string;
   type?: string;
   placeholder?: string;
   focusOnMount?: boolean;
   value: string;
   onChange: (newValue: string) => any;
-  onBlur?: React.FocusEventHandler;
+  onBlur?: React.FocusEventHandler<HTMLElement>;
 }
 
 export interface ClearableInputState {
@@ -42,16 +39,12 @@ export interface ClearableInputState {
 
 export class ClearableInput extends React.Component<ClearableInputProps, ClearableInputState> {
 
-  constructor() {
-    super();
-  }
-
   onChange(e: KeyboardEvent) {
     this.props.onChange((e.target as HTMLInputElement).value);
   }
 
   onClear() {
-    this.props.onChange('');
+    this.props.onChange("");
   }
 
   render() {
@@ -59,21 +52,21 @@ export class ClearableInput extends React.Component<ClearableInputProps, Clearab
 
     var ref = focusOnMount ? focusOnInput : null;
 
-    var classNames = ['clearable-input'];
+    var classNames = ["clearable-input"];
     if (className) classNames.push(className);
-    if (!value) classNames.push('empty');
+    if (!value) classNames.push("empty");
 
-    return <div className={classNames.join(' ')}>
+    return <div className={classNames.join(" ")}>
       <input
-        type={type || 'text'}
+        type={type || "text"}
         placeholder={placeholder}
-        value={value || ''}
+        value={value || ""}
         onChange={this.onChange.bind(this)}
         onBlur={onBlur}
         ref={ref}
       />
       <div className="clear" onClick={this.onClear.bind(this)}>
-        <SvgIcon svg={require('../../icons/x.svg')}/>
+        <SvgIcon svg={require("../../icons/x.svg")} />
       </div>
     </div>;
   }

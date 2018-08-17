@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +15,8 @@
  * limitations under the License.
  */
 
-import * as React from 'react';
-import { Class, Instance, isInstanceOf } from 'immutable-class';
+import { Class, Instance } from "immutable-class";
+import * as React from "react";
 
 export interface MarginParameters {
   left?: number;
@@ -39,9 +40,10 @@ export interface StageJS {
 }
 
 var check: Class<StageValue, StageJS>;
+
 export class Stage implements Instance<StageValue, StageJS> {
   static isStage(candidate: any): candidate is Stage {
-    return isInstanceOf(candidate, Stage);
+    return candidate instanceof Stage;
   }
 
   static fromJS(parameters: StageJS): Stage {
@@ -52,7 +54,6 @@ export class Stage implements Instance<StageValue, StageJS> {
       height: parameters.height
     });
   }
-
 
   static fromClientRect(rect: ClientRect): Stage {
     return new Stage({
@@ -71,7 +72,6 @@ export class Stage implements Instance<StageValue, StageJS> {
       height
     });
   }
-
 
   public x: number;
   public y: number;
@@ -198,4 +198,5 @@ export class Stage implements Instance<StageValue, StageJS> {
     return new Stage(value);
   }
 }
+
 check = Stage;

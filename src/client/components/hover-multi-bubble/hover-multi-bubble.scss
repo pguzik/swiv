@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,19 +21,18 @@
   @extend %menu-cont;
   background: rgba($white, 0.9);
   position: absolute;
-  width: 200px;
   padding: 8px;
 
   .bucket {
     color: $text-lighterish;
     margin-bottom: 6px;
+    white-space: nowrap;
   }
 
-  .color {
+  .colors {
+    table-layout: fixed;
+
     .color-swab {
-      position: absolute;
-      top: 1px;
-      left: 0;
       width: 15px;
       height: 15px;
       border-radius: 2px;
@@ -40,16 +40,27 @@
 
     .color-name {
       @include ellipsis;
-      display: inline-block;
-      margin-left: 22px;
+      max-width: 140px;
+      padding-left: 5px;
       line-height: 18px;
-      width: 108px;
     }
 
+    .color-previous,
     .color-value {
-      @include pin-right(60px);
       line-height: 18px;
+      white-space: nowrap;
       text-align: right;
+    }
+
+    .color-previous {
+      padding-left: 5px;
+      color: $text-lighterish;
+    }
+
+    .color-delta {
+      line-height: 18px;
+      white-space: nowrap;
+      padding-left: 5px;
     }
   }
 

@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2016 Imply Data, Inc.
+ * Copyright 2017-2018 Allegro.pl
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,23 +15,22 @@
  * limitations under the License.
  */
 
-import {classNames} from '../../utils/dom/dom';
-require('./tile-header.css');
-
-import * as React from 'react';
-import { SvgIcon } from '../svg-icon/svg-icon';
+import * as React from "react";
+import { classNames } from "../../utils/dom/dom";
+import { SvgIcon } from "../svg-icon/svg-icon";
+import "./tile-header.scss";
 
 export interface TileHeaderIcon {
   name: string;
   svg: string;
-  onClick: React.MouseEventHandler;
+  onClick: React.MouseEventHandler<HTMLElement>;
   ref?: string;
   active?: boolean;
 }
 
-export interface TileHeaderProps extends React.Props<any> {
+export interface TileHeaderProps {
   title: string;
-  onDragStart?: React.DragEventHandler;
+  onDragStart?: React.DragEventHandler<HTMLElement>;
   icons?: TileHeaderIcon[];
 }
 
@@ -39,23 +39,18 @@ export interface TileHeaderState {
 
 export class TileHeader extends React.Component<TileHeaderProps, TileHeaderState> {
 
-  constructor() {
-    super();
-
-  }
-
   renderIcons() {
     const { icons } = this.props;
     if (!icons || !icons.length) return null;
 
     var iconElements = icons.map(icon => {
       return <div
-        className={classNames('icon', icon.name, { active: icon.active })}
+        className={classNames("icon", icon.name, { active: icon.active })}
         key={icon.name}
         onClick={icon.onClick}
         ref={icon.ref}
       >
-        <SvgIcon svg={icon.svg}/>
+        <SvgIcon svg={icon.svg} />
       </div>;
     });
 
